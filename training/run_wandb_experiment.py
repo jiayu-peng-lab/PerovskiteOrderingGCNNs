@@ -182,14 +182,14 @@ def wandb_evaluate_model(data_name,hyperparameters,processed_data,target_prop,in
     # Convert hyperparameters to expected format
     hyperparameters = convert_hyperparameters(hyperparameters)
 
-    train_loader = get_dataloader(train_data,target_prop,model_type,hyperparameters["batch_size"],interpolation,per_site=per_site)
+    train_loader = get_dataloader(train_data,target_prop,model_type,hyperparameters["batch_size"],interpolation,per_site=per_site,device=device)
     train_eval_loader = None
 
     if "e3nn" in model_type and "pretrain" not in data_name and "per_site" not in target_prop:
-        train_eval_loader = get_dataloader(train_data,target_prop,"e3nn_contrastive",1,interpolation,per_site=per_site)
-        val_loader = get_dataloader(validation_data,target_prop,"e3nn_contrastive",1,interpolation,per_site=per_site)
+        train_eval_loader = get_dataloader(train_data,target_prop,"e3nn_contrastive",1,interpolation,per_site=per_site,device=device)
+        val_loader = get_dataloader(validation_data,target_prop,"e3nn_contrastive",1,interpolation,per_site=per_site,device=device)
     else:
-        val_loader = get_dataloader(validation_data,target_prop,model_type,1,interpolation,per_site=per_site)
+        val_loader = get_dataloader(validation_data,target_prop,model_type,1,interpolation,per_site=per_site,device=device)
     
     # Pass hyperparameters as positional argument
     model, normalizer = create_model(model_type, train_loader, interpolation, target_prop, hyperparameters, per_site=per_site)
@@ -229,6 +229,8 @@ def create_wandb_experiment(data_name,target_prop,struct_type,interpolation,mode
         sweep_config = get_painn_hyperparameter_range()
     elif model_type == "CGCNN":
         sweep_config = get_cgcnn_hyperparameter_range()
+    elif model_type == "ALIGNN":
+        sweep_config = get_alignn_hyperparameter_range()
     else:
         sweep_config = get_e3nn_hyperparameter_range()
     

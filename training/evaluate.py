@@ -7,8 +7,11 @@ from torch.autograd import Variable
 
 
 def evaluate_model(model, normalizer, model_type, dataloader, loss_fn, gpu_num, is_contrastive=False, contrastive_weight=1.0):
-    device_name = "cuda:" + str(gpu_num)
-    device = torch.device(device_name)
+    try:
+        device_name = "cuda:" + str(gpu_num)
+        device = torch.device(device_name)
+    except:
+        device = torch.device("cpu")
 
     if model_type == "Painn":
         prop_names = model.output_keys
@@ -35,6 +38,26 @@ def evaluate_model(model, normalizer, model_type, dataloader, loss_fn, gpu_num, 
                                  [crys_idx.cuda(non_blocking=True) for crys_idx in input_struct[3]])
                     output = model(*input_var).view(-1)
                     target = Variable(target.cuda(non_blocking=True))
+                elif model_type == "ALIGNN":
+                    # ALIGNN returns (graph, line_graph, lattice, label) when line_graph=True
+                    graph, line_graph, lattice, target = d
+                    try:
+                        graph = graph.to(device)
+                        line_graph = line_graph.to(device)
+                        lattice = lattice.to(device)
+                        target = target.to(device)
+                    except Exception as e:
+                        if "cuda is not enabled" in str(e):
+                            # Move model to CPU to match the graphs
+                            model = model.to("cpu")
+                            device = torch.device("cpu")
+                            graph = graph.to(device)
+                            line_graph = line_graph.to(device)
+                            lattice = lattice.to(device)
+                            target = target.to(device)
+                        else:
+                            raise e
+                    output = model((graph, line_graph, lattice)).view(-1)
                 else:
                     d.to(device)
                     output = model(d)
@@ -47,14 +70,27 @@ def evaluate_model(model, normalizer, model_type, dataloader, loss_fn, gpu_num, 
                     loss = loss_fn(normalizer.denorm(output).view(target.shape), target)
                     loss_cumulative = loss_cumulative + loss.detach().item()*target.shape[0]
                 elif is_contrastive:
-                    loss, direct_loss, contrastive_loss = loss_fn(normalizer.denorm(output), d.target, d.comp, contrastive_weight)
-                    loss_cumulative = loss_cumulative + loss.detach().item()
-                    loss_direct_cumulative = loss_direct_cumulative + direct_loss.detach().item()*target.shape[0]
-                    curr_contrastive_count = count_contastive_terms(d.comp)
-                    loss_contrastive_cumulative = loss_contrastive_cumulative + contrastive_loss.detach().item()*curr_contrastive_count
-                    contrastive_term_count += curr_contrastive_count
+                    # For contrastive loss, we need to handle ALIGNN data format
+                    if model_type == "ALIGNN":
+                        # ALIGNN data is already unpacked as (graph, line_graph, lattice, target)
+                        # We need to get the composition data from somewhere else
+                        # For now, skip contrastive loss for ALIGNN
+                        loss = loss_fn(normalizer.denorm(output), target)
+                        loss_cumulative = loss_cumulative + loss.detach().item()*target.shape[0]
+                    else:
+                        loss, direct_loss, contrastive_loss = loss_fn(normalizer.denorm(output), d.target, d.comp, contrastive_weight)
+                        loss_cumulative = loss_cumulative + loss.detach().item()
+                        loss_direct_cumulative = loss_direct_cumulative + direct_loss.detach().item()*target.shape[0]
+                        curr_contrastive_count = count_contastive_terms(d.comp)
+                        loss_contrastive_cumulative = loss_contrastive_cumulative + contrastive_loss.detach().item()*curr_contrastive_count
+                        contrastive_term_count += curr_contrastive_count
                 else:
-                    loss = loss_fn(normalizer.denorm(output), d.target)
+                    # For non-contrastive loss, handle ALIGNN data format
+                    if model_type == "ALIGNN":
+                        # target is already extracted from the tuple
+                        loss = loss_fn(normalizer.denorm(output), target)
+                    else:
+                        loss = loss_fn(normalizer.denorm(output), d.target)
                     loss_cumulative = loss_cumulative + loss.detach().item()*target.shape[0]
                 
                 total_count += target.shape[0]

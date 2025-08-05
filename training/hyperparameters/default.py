@@ -45,3 +45,19 @@ def get_default_e3nn_hyperparameters():
     hyperparameters['num_radial_neurons'] = 100
 
     return hyperparameters
+
+
+def get_default_alignn_hyperparameters():
+
+    hyperparameters = {}
+
+    hyperparameters['MaxEpochs'] = 100
+    hyperparameters["batch_size"] = 8
+    hyperparameters["log_lr"] = -3
+    hyperparameters["reduceLR_patience"] = 10
+    hyperparameters["embedding_features"] = 64
+    hyperparameters["hidden_features"] = 256
+    hyperparameters["alignn_layers"] = 4
+    hyperparameters["gcn_layers"] = 4
+
+    return hyperparameters

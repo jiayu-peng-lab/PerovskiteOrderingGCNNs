@@ -153,6 +153,54 @@ def get_e3nn_hyperparameter_range():
     return sweep_config
 
 
+def get_alignn_hyperparameter_range():
+    """Get wandb sweep configuration for ALIGNN model"""
+    sweep_config = {
+        'method': 'bayes',  # Bayesian optimization
+        'metric': {
+            'name': 'val_mae',
+            'goal': 'minimize'
+        },
+        'parameters': {
+            'MaxEpochs': {
+                'value': 100
+            },
+            'batch_size': {
+                'min': 4,
+                'max': 12,
+                'distribution': 'int_uniform'
+            },
+            'log_lr': {
+                'min': -5,
+                'max': -2,
+                'distribution': 'int_uniform'
+            },
+            'reduceLR_patience': {
+                'min': 10,
+                'max': 30,
+                'distribution': 'int_uniform'
+            },
+            'embedding_features': {
+                'values': [32, 64, 128]
+            },
+            'hidden_features': {
+                'values': [128, 256, 512]
+            },
+            'alignn_layers': {
+                'min': 2,
+                'max': 6,
+                'distribution': 'int_uniform'
+            },
+            'gcn_layers': {
+                'min': 2,
+                'max': 6,
+                'distribution': 'int_uniform'
+            }
+        }
+    }
+    return sweep_config
+
+
 def convert_hyperparameters(hyperparameters):
     """Convert wandb hyperparameters to the format expected by the training code"""
     # Convert log_lr to actual learning rate but keep both

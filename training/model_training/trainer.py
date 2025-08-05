@@ -23,6 +23,8 @@ def trainer(model,normalizer,model_type,train_loader,val_loader,hyperparameters,
     
     if model_type == "Painn":
         best_model = train_painn(model,train_loader,val_loader,hyperparameters,OUTDIR,gpu_num)
+    elif model_type == "ALIGNN":
+        best_model = train_alignn(model,normalizer,train_loader,val_loader,hyperparameters,OUTDIR,gpu_num)
     else:
         best_model = train_CGCNN_e3nn(model,normalizer,model_type,loss_fn,contrastive_loss,train_loader,val_loader,hyperparameters,OUTDIR,gpu_num,train_eval_loader,contrastive_weight)
 
@@ -78,6 +80,98 @@ def train_painn(model,train_loader,val_loader,hyperparameters,OUTDIR,gpu_num):
     T.train(device=gpu_num, n_epochs=num_epochs)
 
     return T.get_best_model()
+
+def train_alignn(model,normalizer,train_loader,val_loader,hyperparameters,OUTDIR,gpu_num):
+    """Training function specifically for ALIGNN model"""
+    try:
+        device_name = "cuda:" + str(gpu_num)
+        device = torch.device(device_name)
+        torch.cuda.set_device(device)
+        print(f"Using CUDA device: {device}")
+    except:
+        device = torch.device("cpu")
+        print("CUDA not available, using CPU")
+
+    best_validation_error = 99999999
+    model.to(device)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=10**hyperparameters["log_lr"])
+    max_epochs = hyperparameters['MaxEpochs']
+    scheduler = ReduceLROnPlateau(
+            optimizer,
+            patience=hyperparameters["reduceLR_patience"],
+            factor=0.5, 
+            min_lr=1e-7, 
+        )
+
+    results = {}
+    history = []
+    loss_fn = torch.nn.L1Loss()
+    
+    for epoch in range(max_epochs):
+        model.train()
+        start_time = time.time()
+        
+        for j, batch in tqdm(enumerate(train_loader), total=len(train_loader)):
+            # ALIGNN returns (graph, line_graph, lattice, label) when line_graph=True
+            graph, line_graph, lattice, target = batch
+            
+            # Move to device
+            try:
+                graph = graph.to(device)
+                line_graph = line_graph.to(device)
+                lattice = lattice.to(device)
+                target = target.to(device)
+            except Exception as e:
+                if "cuda is not enabled" in str(e):
+                    print("DGL CUDA not available, using CPU for graphs but GPU for model")
+                    # Move model to CPU to match the graphs
+                    model = model.to("cpu")
+                    device = torch.device("cpu")
+                    graph = graph.to(device)
+                    line_graph = line_graph.to(device)
+                    lattice = lattice.to(device)
+                    target = target.to(device)
+                else:
+                    raise e
+            
+            # Forward pass - ALIGNN expects (g, lg, lat) tuple
+            output = model((graph, line_graph, lattice)).view(-1)
+            
+            # Loss calculation
+            loss = loss_fn(normalizer.denorm(output).view(target.shape), target)
+            
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        end_time = time.time()
+        wall = end_time - start_time    
+    
+        model.eval()
+        
+        # Evaluation
+        predictions, targets, train_avg_loss = evaluate_model(model, normalizer, "ALIGNN", train_loader, loss_fn, gpu_num)
+        predictions, targets, valid_avg_loss = evaluate_model(model, normalizer, "ALIGNN", val_loader, loss_fn, gpu_num)
+        
+        results = record_keep(history,results,epoch,wall,optimizer,valid_avg_loss,train_avg_loss,model,"standard")
+        validation_loss = valid_avg_loss[0]
+
+        if (epoch == 0) or (validation_loss < best_validation_error):
+            best_validation_error = validation_loss
+            with open(OUTDIR + '/best_model.torch', 'wb') as f:
+                torch.save(results, f)
+
+        if scheduler is not None:
+            scheduler.step(validation_loss)
+
+    with open(OUTDIR + '/final_model.torch', 'wb') as f:
+        torch.save(results, f)
+
+    model_state = torch.load(OUTDIR + '/best_model.torch', map_location=torch.device('cpu'))['state']
+    model.load_state_dict(model_state)
+    model.to(device)
+    return model
 
 def train_CGCNN_e3nn(model,normalizer,model_type,loss_fn,contrastive_loss_fn,train_loader,val_loader,hyperparameters,OUTDIR,gpu_num,train_eval_loader,contrastive_weight):
 ### Adapted from https://github.com/ninarina12/phononDoS_tutorial/blob/main/utils/utils_model.py

@@ -12,9 +12,49 @@ from models.PerovskiteOrderingGCNNs_cgcnn.cgcnn.data import get_cgcnn_loader
 import sys
 sys.path.append('models/PerovskiteOrderingGCNNs_painn/')
 from nff.data import Dataset, collate_dicts
+from models.PerovskiteOrderingGCNNs_alignn.alignn.dataset import get_torch_dataset
+import torch
+import dgl
 
 
-def get_dataloader(data, prop="dft_e_hull", model_type="CGCNN", batch_size=10, interpolation=True, per_site=False, long_range=False):
+class AlignnCollateFunction:
+    """Picklable collate function for ALIGNN dataloader"""
+    def __init__(self, device="cuda:0"):
+        self.device = device
+    
+    def __call__(self, samples):
+        """Custom collate function that moves everything to GPU"""
+        graphs, line_graphs, lattices, labels = map(list, zip(*samples))
+        
+        # Batch graphs on CPU first
+        batched_graph = dgl.batch(graphs)
+        batched_line_graph = dgl.batch(line_graphs)
+        
+        # Convert lattices and labels to tensors on CPU first
+        if isinstance(labels[0], torch.Tensor):
+            labels_tensor = torch.stack(labels)
+        else:
+            labels_tensor = torch.tensor(labels, dtype=torch.float32)
+        
+        if isinstance(lattices[0], torch.Tensor):
+            lattices_tensor = torch.stack(lattices)
+        else:
+            lattices_tensor = torch.tensor(lattices, dtype=torch.float32)
+        
+        # Move everything to GPU (since we're not using multiprocessing)
+        try:
+            batched_graph = batched_graph.to(self.device)
+            batched_line_graph = batched_line_graph.to(self.device)
+            labels_tensor = labels_tensor.to(self.device)
+            lattices_tensor = lattices_tensor.to(self.device)
+        except Exception as e:
+            print(f"Warning: Could not move data to GPU: {e}")
+            print("Data will remain on CPU")
+        
+        return batched_graph, batched_line_graph, lattices_tensor, labels_tensor
+
+
+def get_dataloader(data, prop="dft_e_hull", model_type="CGCNN", batch_size=10, interpolation=True, per_site=False, long_range=False, device="cuda:0"):
     tqdm.pandas()
     pd.options.mode.chained_assignment = None # Disable the SettingWithCopy warning (due to pandas.apply as new column)
     
@@ -32,6 +72,8 @@ def get_dataloader(data, prop="dft_e_hull", model_type="CGCNN", batch_size=10, i
         data_loader = get_e3nn_dataloader(data,prop,batch_size,per_site=per_site)
     elif model_type == "e3nn_contrastive":
         data_loader = get_e3nn_contrastive_dataloader(data,prop,batch_size)
+    elif model_type == "ALIGNN":
+        data_loader = get_alignn_dataloader(data, prop, batch_size, device)
     else:
         raise ValueError("Model Type Not Supported")
 
@@ -66,6 +108,71 @@ def get_e3nn_contrastive_dataloader(data,prop,batch_size):
     comp_data = construct_contrastive_dataset(data,prop,r_max=5.0)
     data_loader = CompDataLoader(comp_data, batch_size=batch_size, shuffle=True)
 
+    return data_loader
+
+
+def get_alignn_dataloader(data, prop, batch_size, device="cuda:0"):
+    """GPU-optimized ALIGNN dataloader with pre-computed graphs and tensor caching"""
+    # Convert DataFrame to ALIGNN dataset and DataLoader
+    # ALIGNN expects an 'atoms' column, so we need to convert ase_structure to atoms format
+    
+    # Create a copy of the data to avoid modifying the original
+    alignn_data = data.copy()
+    
+    # Convert ase_structure to atoms format that ALIGNN expects
+    def convert_ase_to_atoms_dict(ase_atoms):
+        """Convert ASE Atoms object to JARVIS Atoms dictionary format expected by ALIGNN"""
+        num_atoms = len(ase_atoms)
+        return {
+            'elements': list(ase_atoms.get_chemical_symbols()),
+            'coords': ase_atoms.get_positions().tolist(),
+            'lattice_mat': ase_atoms.get_cell().tolist(),
+            'cartesian': True,
+            'props': [''] * num_atoms  # Empty props for each atom
+        }
+    
+    # Add atoms column by converting ase_structure
+    alignn_data['atoms'] = alignn_data['ase_structure'].apply(convert_ase_to_atoms_dict)
+    
+    dataset = get_torch_dataset(
+        dataset=alignn_data.to_dict("records"),
+        target=prop,
+        id_tag="idx",
+        name="user_data",
+        neighbor_strategy="k-nearest",
+        atom_features="cgcnn",
+        use_canonize=False,
+        line_graph=True,
+        cutoff=8.0,
+        cutoff_extra=3.0,
+        max_neighbors=12,
+        classification=False,
+        output_dir=".",
+        tmp_name="alignn_tmp",
+        dtype="float32",
+    )
+    
+    # Disable multiprocessing to avoid CUDA tensor sharing issues
+    # Use single worker and disable pin_memory to avoid multiprocessing problems
+    num_workers = 0
+    pin_memory = False
+    persistent_workers = False
+    print("Using single worker for ALIGNN dataloader to avoid CUDA multiprocessing issues")
+
+    # Create picklable collate function
+    collate_fn = AlignnCollateFunction(device)
+
+    # Use custom GPU-optimized collate function
+    data_loader = DataLoader(
+        dataset, 
+        batch_size=batch_size, 
+        shuffle=True, 
+        collate_fn=collate_fn,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers
+    )
+    
     return data_loader
 
 
