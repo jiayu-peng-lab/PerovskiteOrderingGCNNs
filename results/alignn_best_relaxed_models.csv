@@ -1,0 +1,11 @@
+struct_type,sweep_id,observation_id,validation_loss,MaxEpochs,alignn_layers,batch_size,embedding_features,gcn_layers,hidden_features,log_lr,reduceLR_patience
+relaxed,wandb-kjahfk,observ_rfjtzg0q,0.014739114667537651,100,6,7,64,6,512,-4,11
+relaxed,wandb-kjahfk,observ_ckqq47zw,0.015219691885925521,100,6,8,64,6,512,-4,10
+relaxed,wandb-kjahfk,observ_3auhhjq7,0.015232162303404304,100,6,9,128,5,256,-4,18
+relaxed,wandb-kjahfk,observ_hkjqg9ze,0.015248170590216692,100,6,6,128,6,512,-4,12
+relaxed,wandb-kjahfk,observ_vkyghc1j,0.015364906898121361,100,6,6,128,6,512,-4,16
+relaxed,wandb-kjahfk,observ_2rd5jgdc,0.015439966570450315,100,6,7,128,5,512,-4,10
+relaxed,wandb-kjahfk,observ_g1p7cr8d,0.01553484416415823,100,6,7,128,5,512,-4,13
+relaxed,wandb-kjahfk,observ_4kiiis8x,0.015597866623986588,100,6,7,128,5,512,-4,15
+relaxed,wandb-kjahfk,observ_dv71u858,0.0156269755242531,100,6,5,128,6,256,-4,15
+relaxed,wandb-kjahfk,observ_ivqvt441,0.01564698297542811,100,6,7,128,6,512,-4,12

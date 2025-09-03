@@ -1,0 +1,1 @@
+{"structure":{"0":"mock_structure_1","1":"mock_structure_2"},"ase_structure":{"0":"mock_ase_1","1":"mock_ase_2"},"dft_e_hull_htvs_data_unrelaxed_diff":{"0":0.1,"1":0.2},"predicted_dft_e_hull_htvs_data_unrelaxed_diff":{"0":0.15,"1":0.25}}

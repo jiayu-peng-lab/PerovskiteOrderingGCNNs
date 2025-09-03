@@ -1,0 +1,11 @@
+struct_type,sweep_id,observation_id,validation_loss,MaxEpochs,alignn_layers,batch_size,embedding_features,gcn_layers,hidden_features,log_lr,reduceLR_patience
+unrelaxed,wandb-i9iun9xf,observ_ah6cg7vx,0.019261028899679206,100,5,8,64,6,256,-4,27
+unrelaxed,wandb-i9iun9xf,observ_nbl0em6s,0.01933677099060235,100,6,11,128,6,256,-3,26
+unrelaxed,wandb-i9iun9xf,observ_bg53bgad,0.01943297011864546,100,5,11,128,6,256,-4,20
+unrelaxed,wandb-i9iun9xf,observ_2maxul4v,0.019476091844732046,100,6,11,128,6,256,-3,27
+unrelaxed,wandb-i9iun9xf,observ_ejexfo6s,0.019681697828948977,100,6,8,128,6,512,-3,27
+unrelaxed,wandb-i9iun9xf,observ_kuu4d197,0.01983091187518974,100,6,8,128,6,256,-4,28
+unrelaxed,wandb-zg72k1bv,observ_4n4eu195,0.01984601217295067,100,6,6,32,3,128,-3,18
+unrelaxed,wandb-i9iun9xf,observ_aw62lm0z,0.019890267877987554,100,6,8,128,5,128,-3,25
+unrelaxed,wandb-i9iun9xf,observ_jb5l9qkr,0.019890643006989978,100,6,10,64,6,512,-4,30
+unrelaxed,wandb-i9iun9xf,observ_dm098s5v,0.019920654264158375,100,5,9,128,5,256,-3,29

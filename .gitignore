@@ -6,9 +6,11 @@ wandb/
 saved_models/CGCNN/
 saved_models/Painn/
 saved_models/e3nn/
+saved_models/ALIGNN/
 best_models/CGCNN/
 best_models/Painn/
 best_models/e3nn/
+best_models/ALIGNN/
 
 
 # Byte-compiled / optimized / DLL files
