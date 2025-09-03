@@ -28,8 +28,13 @@ def get_alignn_model(hyperparameters, train_loader, per_site=False):
     # Compute normalizer from training targets (same pattern as CGCNN and e3NN)
     training_labels = []
     for i, batch in enumerate(tqdm(train_loader)):
-        # ALIGNN dataloader returns (graph, line_graph, lattice, target) when line_graph=True
-        if isinstance(batch, (list, tuple)) and len(batch) >= 4:
+        # Handle our new CGCNN-style format: (input_data, targets, crystal_ids)
+        if isinstance(batch, (list, tuple)) and len(batch) == 3:
+            # New format from our custom collate function
+            input_data, targets, crystal_ids = batch
+            training_labels.append(targets.view(-1, 1))
+        # Fallback: Original ALIGNN dataloader format
+        elif isinstance(batch, (list, tuple)) and len(batch) >= 4:
             # Line graph format: (graph, line_graph, lattice, target)
             training_labels.append(batch[3].view(-1, 1))
         elif isinstance(batch, (list, tuple)) and len(batch) >= 2:

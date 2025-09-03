@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import os
 
 from sklearn.decomposition import PCA
 from pymatgen.core import Structure
@@ -21,7 +22,34 @@ def get_datapoint(target_prop, model, interp, training_fraction, struct):
     model_params["long_range"]=False
     # Wandb name building (active)
     wandb_name = build_wandb_name(model_params["data"], target_prop, model_params["struct_type"], model_params["interpolation"], model_params["model_type"],contrastive_weight=model_params["contrastive_weight"],training_fraction=model_params["training_fraction"])
-    directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
+    
+    # Handle different directory structures based on training fraction and model type
+    if training_fraction == 1.0:
+        # For full training fraction, check if we need experiment ID
+        try:
+            exp_id = get_experiment_id(model_params, target_prop)
+            if exp_id == "none" or model_params["model_type"] in ["ALIGNN"]:
+                # ALIGNN and some others have files directly in wandb_name/best_X/
+                directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
+            else:
+                # Other models with experiment ID
+                directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/" + str(exp_id) + "/best_"
+        except:
+            # Fallback to direct path for models without experiment IDs
+            directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
+    else:
+        # For partial training fractions, files are in wandb_name/experiment_id/best_X/
+        try:
+            exp_id = get_experiment_id(model_params, target_prop)
+            directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/" + str(exp_id) + "/best_"
+        except:
+            # Fallback to direct path for models without experiment IDs
+            directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
+
+    # Check if the directory exists, if not try without experiment ID
+    if not os.path.exists(directory + "0"):
+        # Try without experiment ID
+        directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
 
     data_0 = pd.read_json(directory + "0" + "/test_set_predictions.json")
     data_1 = pd.read_json(directory + "1" + "/test_set_predictions.json")
@@ -57,18 +85,69 @@ def get_series(prop, model, interp, struct):
 
 def get_property(prop, struct):
     CGCNN = get_series(prop, "CGCNN", False, struct)
-    # e3nn = get_series(prop, "e3nn", False, struct)  # Commented out as per new requirements
+    e3nn = get_series(prop, "e3nn", False, struct)
     
-    return CGCNN, None
+    # ALIGNN only has training_fraction=1.0, so we get just that datapoint
+    try:
+        alignn_mean, alignn_std = get_datapoint(prop, "ALIGNN", False, 1.0, struct)
+        # Create arrays with same structure as other models (4 training fractions)
+        # but only populate the first value (training_fraction=1.0)
+        ALIGNN = (np.array([alignn_mean, np.nan, np.nan, np.nan]), 
+                  np.array([alignn_std, np.nan, np.nan, np.nan]))
+    except:
+        # If ALIGNN data not available, return None
+        ALIGNN = None
+    
+    return CGCNN, e3nn, ALIGNN
 
 
 def flatten(matrix):
-    matrix = list(matrix)
-    if isinstance(matrix[0],list):
-        out = [item for row in matrix for item in row]
-    else:
+    # Convert to list if it's not already
+    try:
+        matrix = list(matrix)
+    except:
+        # If we can't convert to list, return as numpy array
+        return np.asarray(matrix)
+    
+    if len(matrix) == 0:
+        return np.asarray([])
+    
+    # Check if the first element is a list (nested structure)
+    try:
+        if isinstance(matrix[0], list):
+            out = [item for row in matrix for item in row]
+        else:
+            # If it's not nested, just return the matrix as is
+            out = matrix
+    except (TypeError, IndexError):
+        # If there's any issue, return the matrix as is
         out = matrix
-    return np.asarray(out)
+    
+    # Try to convert to numpy array, but handle inhomogeneous shapes
+    try:
+        return np.asarray(out)
+    except ValueError:
+        # If numpy can't handle the shape, try to flatten further or return as list
+        try:
+            # Try to convert each element to float if possible
+            flattened = []
+            for item in out:
+                if isinstance(item, (list, tuple)):
+                    flattened.extend(item)
+                else:
+                    try:
+                        flattened.append(float(item))
+                    except (ValueError, TypeError):
+                        # If we can't convert to float, skip this item
+                        continue
+            if flattened:
+                return np.asarray(flattened)
+            else:
+                # If no items could be converted, return original
+                return out
+        except:
+            # If all else fails, return as list
+            return out
 
 
 def get_relative_vals(dataframe, vals):  

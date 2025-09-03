@@ -193,6 +193,25 @@ def evaluate_model_with_tracked_ids(model, normalizer, gpu_num, test_loader, mod
                     output = model(*input_var).view(-1)
                     target = Variable(target.cuda(non_blocking=True))
                     crys_idx = d[2]
+                elif model_params["model_type"] == "ALIGNN":
+                    # Handle ALIGNN data - it should be a tuple from our custom collate function
+                    if isinstance(d, tuple) and len(d) == 3:
+                        # New format: (input_data, targets, crystal_ids)
+                        input_data = d[0]  # (batched_graph, batched_line_graph, lattices_tensor)
+                        target = d[1]      # labels_tensor
+                        crys_idx = d[2]    # crystal indices
+                        
+                        # Extract graphs for model input - ALIGNN expects (graph, line_graph, lattice)
+                        batched_graph, batched_line_graph, lattices_tensor = input_data
+                        output = model((batched_graph, batched_line_graph, lattices_tensor))
+                    else:
+                        # Fallback: old format where d might be a different structure
+                        # For ALIGNN, d should be: (batched_graph, batched_line_graph, lattices_tensor, labels_tensor)
+                        batched_graph, batched_line_graph, lattices_tensor, labels_tensor = d
+                        output = model((batched_graph, batched_line_graph, lattices_tensor))
+                        # Generate batch indices as fallback
+                        batch_size = labels_tensor.shape[0]
+                        crys_idx = list(range(j * batch_size, (j + 1) * batch_size))
                 else:
                     d.to(device)
                     output = model(d)

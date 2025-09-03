@@ -23,8 +23,8 @@ class AlignnCollateFunction:
         self.device = device
     
     def __call__(self, samples):
-        """Custom collate function that moves everything to GPU"""
-        graphs, line_graphs, lattices, labels = map(list, zip(*samples))
+        """Custom collate function that moves everything to GPU and extracts crystal indices"""
+        graphs, line_graphs, lattices, labels, ids = map(list, zip(*samples))
         
         # Batch graphs on CPU first
         batched_graph = dgl.batch(graphs)
@@ -51,7 +51,8 @@ class AlignnCollateFunction:
             print(f"Warning: Could not move data to GPU: {e}")
             print("Data will remain on CPU")
         
-        return batched_graph, batched_line_graph, lattices_tensor, labels_tensor
+        # Return in CGCNN format: (input_data, targets, crystal_ids)
+        return (batched_graph, batched_line_graph, lattices_tensor), labels_tensor, ids
 
 
 def get_dataloader(data, prop="dft_e_hull", model_type="CGCNN", batch_size=10, interpolation=True, per_site=False, long_range=False, device="cuda:0"):

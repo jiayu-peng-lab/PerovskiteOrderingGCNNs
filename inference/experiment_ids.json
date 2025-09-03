@@ -20,5 +20,8 @@
     "dft_e_hull_htvs_data_M3Gnet_relaxed_e3nn":837629, 
 
     "dft_e_hull_htvs_data_unrelaxed_Painn":837609,    
-    "dft_e_hull_htvs_data_relaxed_Painn":3
+    "dft_e_hull_htvs_data_relaxed_Painn":3,
+
+    "dft_e_hull_htvs_data_unrelaxed_ALIGNN":"none",
+    "dft_e_hull_htvs_data_relaxed_ALIGNN":"none"
 }
