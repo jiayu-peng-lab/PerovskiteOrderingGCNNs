@@ -1,0 +1,36 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+.ipynb_checkpoints/
+.wandb/
+wandb/
+.apptainer_cache/
+
+# Keep local DGL source to build inside container
+
+# Heavy data and artifacts (mount at runtime instead)
+data/
+saved_models/
+best_models/
+figures/
+nohup.out
+
+# Git and build artifacts
+.git/
+.gitmodules
+.gitignore
+build/
+dist/
+*.egg-info/
+
+# Docker build context noise
+docker/build/
+
+# OS files
+.DS_Store
+Thumbs.db
+

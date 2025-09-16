@@ -113,8 +113,18 @@ def train_alignn(model,normalizer,train_loader,val_loader,hyperparameters,OUTDIR
         start_time = time.time()
         
         for j, batch in tqdm(enumerate(train_loader), total=len(train_loader)):
-            # ALIGNN returns (graph, line_graph, lattice, label) when line_graph=True
-            graph, line_graph, lattice, target = batch
+            # ALIGNN batch may be either:
+            # - 4-tuple: (graph, line_graph, lattice, target)
+            # - 2-tuple: ((graph, line_graph, lattice), target)
+            if isinstance(batch, (list, tuple)) and len(batch) == 4:
+                graph, line_graph, lattice, target = batch
+            elif isinstance(batch, (list, tuple)) and len(batch) == 3 and isinstance(batch[0], (list, tuple)) and len(batch[0]) == 3:
+                # Format: ((graph, line_graph, lattice), target, ids)
+                (graph, line_graph, lattice), target, _ = batch
+            elif isinstance(batch, (list, tuple)) and len(batch) == 2 and isinstance(batch[0], (list, tuple)) and len(batch[0]) == 3:
+                (graph, line_graph, lattice), target = batch
+            else:
+                raise ValueError(f"Unexpected ALIGNN batch format: {type(batch)} with length {len(batch) if isinstance(batch, (list, tuple)) else 'N/A'}")
             
             # Move to device
             try:

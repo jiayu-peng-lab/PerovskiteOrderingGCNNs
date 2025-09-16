@@ -39,8 +39,18 @@ def evaluate_model(model, normalizer, model_type, dataloader, loss_fn, gpu_num, 
                     output = model(*input_var).view(-1)
                     target = Variable(target.cuda(non_blocking=True))
                 elif model_type == "ALIGNN":
-                    # ALIGNN returns (graph, line_graph, lattice, label) when line_graph=True
-                    graph, line_graph, lattice, target = d
+                    # ALIGNN batch may be:
+                    # - 4-tuple: (graph, line_graph, lattice, target)
+                    # - 2-tuple: ((graph, line_graph, lattice), target)
+                    # - 3-tuple: ((graph, line_graph, lattice), target, ids)
+                    if isinstance(d, (list, tuple)) and len(d) == 4:
+                        graph, line_graph, lattice, target = d
+                    elif isinstance(d, (list, tuple)) and len(d) == 3 and isinstance(d[0], (list, tuple)) and len(d[0]) == 3:
+                        (graph, line_graph, lattice), target, _ = d
+                    elif isinstance(d, (list, tuple)) and len(d) == 2 and isinstance(d[0], (list, tuple)) and len(d[0]) == 3:
+                        (graph, line_graph, lattice), target = d
+                    else:
+                        raise ValueError(f"Unexpected ALIGNN batch format in eval: {type(d)} with length {len(d) if isinstance(d, (list, tuple)) else 'N/A'}")
                     try:
                         graph = graph.to(device)
                         line_graph = line_graph.to(device)

@@ -50,22 +50,31 @@ def get_datapoint(target_prop, model, interp, training_fraction, struct):
     if not os.path.exists(directory + "0"):
         # Try without experiment ID
         directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
+    
+    # Check if any of the required files exist
+    if not os.path.exists(directory + "0") or not os.path.exists(directory + "1") or not os.path.exists(directory + "2"):
+        # If any required files are missing, return NaN values
+        return np.nan, np.nan
 
-    data_0 = pd.read_json(directory + "0" + "/test_set_predictions.json")
-    data_1 = pd.read_json(directory + "1" + "/test_set_predictions.json")
-    data_2 = pd.read_json(directory + "2" + "/test_set_predictions.json")
-    
-    pred_0 = np.asarray(flatten(list(data_0["predicted_" + target_prop]))).reshape(-1).flatten()
-    pred_1 = np.asarray(flatten(list(data_1["predicted_" + target_prop]))).reshape(-1).flatten()
-    pred_2 = np.asarray(flatten(list(data_2["predicted_" + target_prop]))).reshape(-1).flatten()
-    
-    errors = [np.mean(np.abs(pred_0 - data_0[target_prop])), 
-              np.mean(np.abs(pred_1 - data_1[target_prop])), 
-              np.mean(np.abs(pred_2 - data_2[target_prop]))
-             ]
-    errors = np.asarray(errors)
-    
-    return errors.mean(), errors.std()
+    try:
+        data_0 = pd.read_json(directory + "0" + "/test_set_predictions.json")
+        data_1 = pd.read_json(directory + "1" + "/test_set_predictions.json")
+        data_2 = pd.read_json(directory + "2" + "/test_set_predictions.json")
+        
+        pred_0 = np.asarray(flatten(list(data_0["predicted_" + target_prop]))).reshape(-1).flatten()
+        pred_1 = np.asarray(flatten(list(data_1["predicted_" + target_prop]))).reshape(-1).flatten()
+        pred_2 = np.asarray(flatten(list(data_2["predicted_" + target_prop]))).reshape(-1).flatten()
+        
+        errors = [np.mean(np.abs(pred_0 - data_0[target_prop])), 
+                  np.mean(np.abs(pred_1 - data_1[target_prop])), 
+                  np.mean(np.abs(pred_2 - data_2[target_prop]))
+                 ]
+        errors = np.asarray(errors)
+        
+        return errors.mean(), errors.std()
+    except Exception:
+        # If any error occurs during file reading or processing, return NaN
+        return np.nan, np.nan
 
 
 def get_series(prop, model, interp, struct):
@@ -87,16 +96,9 @@ def get_property(prop, struct):
     CGCNN = get_series(prop, "CGCNN", False, struct)
     e3nn = get_series(prop, "e3nn", False, struct)
     
-    # ALIGNN only has training_fraction=1.0, so we get just that datapoint
-    try:
-        alignn_mean, alignn_std = get_datapoint(prop, "ALIGNN", False, 1.0, struct)
-        # Create arrays with same structure as other models (4 training fractions)
-        # but only populate the first value (training_fraction=1.0)
-        ALIGNN = (np.array([alignn_mean, np.nan, np.nan, np.nan]), 
-                  np.array([alignn_std, np.nan, np.nan, np.nan]))
-    except:
-        # If ALIGNN data not available, return None
-        ALIGNN = None
+    # Return full ALIGNN series as well; directory resolution in get_datapoint
+    # already tries both with and without experiment_id for fractional runs.
+    ALIGNN = get_series(prop, "ALIGNN", False, struct)
     
     return CGCNN, e3nn, ALIGNN
 

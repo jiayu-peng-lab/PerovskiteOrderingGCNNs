@@ -1,1 +1,0 @@
-{"MaxEpochs": 100, "alignn_layers": 2, "batch_size": 6, "embedding_features": 64, "gcn_layers": 6, "hidden_features": 256, "log_lr": -3, "reduceLR_patience": 29}

@@ -234,13 +234,17 @@ def create_wandb_experiment(data_name,target_prop,struct_type,interpolation,mode
     else:
         sweep_config = get_e3nn_hyperparameter_range()
     
-    # Create project name based on model type and structure type
-    # 6 different project names: CGCNN-unrelaxed, CGCNN-relaxed, e3nn-unrelaxed, e3nn-relaxed, Painn-unrelaxed, Painn-relaxed
+    # Create project name based on model type, structure type, and training fraction
+    # 6 base project names: CGCNN-unrelaxed, CGCNN-relaxed, e3nn-unrelaxed, e3nn-relaxed, Painn-unrelaxed, Painn-relaxed
     if struct_type in ["unrelaxed", "relaxed"]:
         project_name = f"perovskite-ordering-{model_type.lower()}-{struct_type}"
     else:
         # For other structure types, use a generic name
         project_name = f"perovskite-ordering-{model_type.lower()}-{struct_type}"
+
+    # Append training fraction to project name for disambiguation when not full data
+    if training_fraction is not None and float(training_fraction) != 1.0:
+        project_name = f"{project_name}-frac-{training_fraction}"
     
     # Add project and program info
     sweep_config.update({
