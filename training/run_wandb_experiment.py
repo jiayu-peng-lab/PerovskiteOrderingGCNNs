@@ -103,58 +103,98 @@ def run_wandb_experiment(struct_type,model_type,gpu_num,experiment_id=None,paral
 
     # Define the training function for the sweep
     def train_function():
-        # Initialize wandb run
-        wandb.init()
-        
-        # Get hyperparameters from wandb
-        hyperparameters = dict(wandb.config)
-        
-        # Convert hyperparameters to expected format
-        hyperparameters = convert_hyperparameters(hyperparameters)
-        
-        # Train model
-        val_loss = wandb_evaluate_model(data_name,hyperparameters,processed_data,target_prop,interpolation,struct_type,model_type,contrastive_weight,training_fraction,training_seed,sweep_id,obs_budget,gpu_num,nickname)
-        
-        # Log final validation loss
-        wandb.log({"val_mae": val_loss})
-        
-        # Save model files permanently (equivalent to sigopt storage)
-        run_id = wandb.run.id
-        model_save_dir = './saved_models/'+ model_type + '/' + wandb_name + '/wandb-' + str(sweep_id) + '/observ_' + str(run_id)
-        model_tmp_dir = './saved_models/'+ model_type + '/' + wandb_name + '/wandb-' + str(run_id) + '/' + nickname + '_tmp' + str(gpu_num)
-        
-        # Ensure the temporary directory exists
-        if not os.path.exists(model_tmp_dir):
-            os.makedirs(model_tmp_dir)
-        
-        # Save hyperparameters and training results
-        training_results = {"validation_loss": val_loss}
-        with open(model_tmp_dir + '/hyperparameters.json', 'w') as file:
-            json.dump(hyperparameters, file)
-        with open(model_tmp_dir + '/training_results.json', 'w') as file:
-            json.dump(training_results, file)
-        
-        # Create permanent save directory
-        if not os.path.exists(model_save_dir):
-            os.makedirs(model_save_dir)
-        
-        # Copy contents of tmp file to permanent location
-        possible_file_names = ["best_model", "best_model.pth.tar", "best_model.torch",
-                               "final_model.torch","final_model","final_model.pth.tar",
-                               "log_human_read.csv","checkpoints/checkpoint-100.pth.tar",
-                               'hyperparameters.json','training_results.json']
-        for file_name in possible_file_names:
-            if os.path.isfile(model_tmp_dir + "/" + file_name):
-                if file_name == "checkpoints/checkpoint-100.pth.tar":
-                    shutil.move(model_tmp_dir + "/" + file_name, model_save_dir + "/" + "checkpoint-100.pth.tar")
-                else:
-                    shutil.move(model_tmp_dir + "/" + file_name, model_save_dir + "/" + file_name)
-        
-        # Clean up tmp directory
-        shutil.rmtree(model_tmp_dir)
-        torch.cuda.empty_cache()
+        try:
+            # Initialize wandb run
+            wandb.init()
+            
+            # Get hyperparameters from wandb
+            hyperparameters = dict(wandb.config)
+            
+            # Convert hyperparameters to expected format
+            hyperparameters = convert_hyperparameters(hyperparameters)
+            
+            # Train model
+            val_loss = wandb_evaluate_model(
+                data_name,
+                hyperparameters,
+                processed_data,
+                target_prop,
+                interpolation,
+                struct_type,
+                model_type,
+                contrastive_weight,
+                training_fraction,
+                training_seed,
+                sweep_id,
+                obs_budget,
+                gpu_num,
+                nickname
+            )
+            
+            # Log final validation loss
+            wandb.log({"val_mae": val_loss})
+            
+            # Save model files permanently (equivalent to sigopt storage)
+            run_id = wandb.run.id
+            model_save_dir = './saved_models/'+ model_type + '/' + wandb_name + '/wandb-' + str(sweep_id) + '/observ_' + str(run_id)
+            model_tmp_dir = './saved_models/'+ model_type + '/' + wandb_name + '/wandb-' + str(run_id) + '/' + nickname + '_tmp' + str(gpu_num)
+            
+            # Ensure the temporary directory exists
+            if not os.path.exists(model_tmp_dir):
+                os.makedirs(model_tmp_dir)
+            
+            # Save hyperparameters and training results
+            training_results = {"validation_loss": val_loss}
+            with open(model_tmp_dir + '/hyperparameters.json', 'w') as file:
+                json.dump(hyperparameters, file)
+            with open(model_tmp_dir + '/training_results.json', 'w') as file:
+                json.dump(training_results, file)
+            
+            # Create permanent save directory
+            if not os.path.exists(model_save_dir):
+                os.makedirs(model_save_dir)
+            
+            # Copy contents of tmp file to permanent location
+            possible_file_names = ["best_model", "best_model.pth.tar", "best_model.torch",
+                                   "final_model.torch","final_model","final_model.pth.tar",
+                                   "log_human_read.csv","checkpoints/checkpoint-100.pth.tar",
+                                   'hyperparameters.json','training_results.json']
+            for file_name in possible_file_names:
+                if os.path.isfile(model_tmp_dir + "/" + file_name):
+                    if file_name == "checkpoints/checkpoint-100.pth.tar":
+                        shutil.move(model_tmp_dir + "/" + file_name, model_save_dir + "/" + "checkpoint-100.pth.tar")
+                    else:
+                        shutil.move(model_tmp_dir + "/" + file_name, model_save_dir + "/" + file_name)
+            
+            # Clean up tmp directory
+            shutil.rmtree(model_tmp_dir)
+            torch.cuda.empty_cache()
+        finally:
+            # Always finish the wandb run to prevent empty dirs
+            try:
+                wandb.finish()
+            except Exception:
+                pass
+            # Cleanup empty local wandb run directories
+            try:
+                wandb_dir = os.path.join(os.getcwd(), 'wandb')
+                if os.path.isdir(wandb_dir):
+                    for entry in os.listdir(wandb_dir):
+                        entry_path = os.path.join(wandb_dir, entry)
+                        if os.path.isdir(entry_path):
+                            try:
+                                # Remove dir if empty
+                                if not os.listdir(entry_path):
+                                    os.rmdir(entry_path)
+                            except Exception:
+                                pass
+            except Exception:
+                pass
     
-    # Run the sweep with remaining budget
+    # Run the sweep with remaining budget (skip when 0 to avoid creating empty runs)
+    if remaining_budget is None or remaining_budget <= 0:
+        print("No remaining runs to execute; skipping wandb.agent.")
+        return
     wandb.agent(sweep_id, train_function, count=remaining_budget)
     
     print(f"Completed wandb sweep with {remaining_budget} observations")
