@@ -1,0 +1,31 @@
+# For Python 3.12 compatibility, use latest PyTorch and related packages
+# If you need CUDA, see https://pytorch.org/get-started/locally/ for the correct install command
+
+torch
+#torch>=2.2.0
+#torchvision>=0.17.0
+torchvision
+torchaudio
+# PyTorch Geometric and extensions should be installed separately after torch/torchvision
+# See https://pytorch-geometric.com/ for correct install commands for your CUDA version
+# pip install torch-geometric
+
+numpy>=1.26.0
+pandas==1.5.3
+scikit-learn==1.2.2
+matplotlib==3.7.1
+wandb==0.16.3
+e3nn==0.5.1
+ase==3.22.1
+pymatgen==2023.5.10
+mp-api==0.38.0
+plotly==5.19.0
+tqdm==4.65.0
+
+# After installing these requirements, install PyTorch Geometric and its extensions with:
+# pip install torch-geometric
+# (or for CUDA: pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric)
+# See https://pytorch-geometric.com/whl/ for the correct command for your system.
+
+# DGL with CUDA support (for ALIGNN model)
+# Install with: pip install dgl-cu117 -f https://data.dgl.ai/wheels/repo.html 

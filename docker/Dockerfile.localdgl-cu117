@@ -1,0 +1,91 @@
+# Build DGL from local source (repo's dgl/) against Torch 1.13.1 + CUDA 11.7
+# Uses CUDA devel image to provide nvcc and headers required by DGL build
+
+FROM nvidia/cuda:11.7.1-cudnn8-devel-ubuntu22.04 as base
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_NO_CACHE_DIR=1 \
+    DGLBACKEND=pytorch \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 python3.10-venv python3.10-dev \
+    build-essential git curl ca-certificates \
+    cmake ninja-build \
+    libopenblas-dev liblapack-dev libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+
+RUN python -m ensurepip && python -m pip install --upgrade pip wheel setuptools
+
+# Install PyTorch 1.13.1 CUDA 11.7
+RUN pip install --index-url https://download.pytorch.org/whl/cu117 \
+    torch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1
+
+# Install PyG deps matching torch 1.13.1 + cu117
+RUN pip install torch-scatter==2.1.1 torch-sparse==0.6.17 torch-cluster==1.6.1 torch-spline-conv==1.2.2 \
+    -f https://data.pyg.org/whl/torch-1.13.0+cu117.html && \
+    pip install torch-geometric==2.3.0
+
+# Copy local DGL source and build/install it
+WORKDIR /tmp/dgl
+COPY dgl/ ./
+
+# Optional: use DGL's python setup to build with CUDA
+# We explicitly set USE_CUDA=1 and DGLBACKEND=pytorch
+RUN TORCH_CUDA_ARCH_LIST="" \
+    USE_CUDA=1 \
+    DGLBACKEND=pytorch \
+    pip install -v .
+
+# Runtime image (smaller): copy installed site-packages only
+FROM nvidia/cuda:11.7.1-cudnn8-runtime-ubuntu22.04 as runtime
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_NO_CACHE_DIR=1 \
+    DGLBACKEND=pytorch \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 python3.10-venv python3.10-dev \
+    build-essential git curl ca-certificates \
+    libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+
+RUN python -m ensurepip && python -m pip install --upgrade pip wheel setuptools
+
+# Install PyTorch 1.13.1 CUDA 11.7 in runtime image
+RUN pip install --index-url https://download.pytorch.org/whl/cu117 \
+    torch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1
+
+# Install PyG 2.3.0 stack
+RUN pip install torch-scatter==2.1.1 torch-sparse==0.6.17 torch-cluster==1.6.1 torch-spline-conv==1.2.2 \
+    -f https://data.pyg.org/whl/torch-1.13.0+cu117.html && \
+    pip install torch-geometric==2.3.0
+
+# Bring in DGL built wheels/site from builder layer
+COPY --from=base /usr/local/lib/python3.10/dist-packages/ /usr/local/lib/python3.10/dist-packages/
+COPY --from=base /usr/local/lib/python3.10/site-packages/ /usr/local/lib/python3.10/site-packages/
+
+# ALIGNN and scientific deps
+WORKDIR /workspace
+COPY requirements-alignn.txt /tmp/requirements-alignn.txt
+RUN pip install -r /tmp/requirements-alignn.txt && rm -f /tmp/requirements-alignn.txt
+
+# Copy project code (mount data/models at runtime)
+COPY processing/ processing/
+COPY training/ training/
+COPY inference/ inference/
+COPY models/ models/
+COPY run_alignn_training.py run_alignn_training.py
+COPY docker/train_alignn.py /usr/local/bin/train_alignn.py
+RUN chmod +x /usr/local/bin/train_alignn.py
+
+CMD ["python", "/usr/local/bin/train_alignn.py", "--check"]
+
+

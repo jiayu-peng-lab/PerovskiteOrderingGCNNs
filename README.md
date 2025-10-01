@@ -20,7 +20,7 @@ cd PerovskiteOrderingGCNNs
 git submodule update --init
 ```
 
-Our codes are built upon previous implementations of [CGCNN](https://github.com/-mit/PerovskiteOrderingGCNNs_cgcnn/tree/af4c0bf6606da1b46887ed8c29521d199d5e2798), [e3nn](https://github.com/learningmatter-mit/PerovskiteOrderingGCNNs_e3nn/tree/408b90e922a2a9c7bae2ad95433aae97d1a58494), and [PaiNN](https://github.com/learningmatter-mit/PerovskiteOrderingGCNNs_painn/tree/e7980a52af4936addc5fb03dbc50d4fc74fe98fc), which are included as submodules in this repo. If there are any changes in their corresponding GitHub repos, the following command will update the submodules in this repo:
+Our codes are built upon previous implementations of [CGCNN](https://github.com/-mit/PerovskiteOrderingGCNNs_cgcnn/tree/af4c0bf6606da1b46887ed8c29521d199d5e2798), [e3nn](https://github.com/learningmatter-mit/PerovskiteOrderingGCNNs_e3nn/tree/408b90e922a2a9c7bae2ad95433aae97d1a58494), [PaiNN](https://github.com/learningmatter-mit/PerovskiteOrderingGCNNs_painn/tree/e7980a52af4936addc5fb03dbc50d4fc74fe98fc), and [ALIGNN](https://github.com/jiayu-peng-lab/PerovskiteOrderingGCNNs_alignn/tree/805884f442cb7cee2c515bc7cbd15b4ef2f31ee2), which are included as submodules in this repo. If there are any changes in their corresponding GitHub repos, the following command will update the submodules in this repo:
 ```
 git submodule update --remote --merge
 ```
@@ -72,6 +72,28 @@ All these packages can be installed using the [`environment.yml`](environment.ym
 conda env create -f environment.yml
 conda activate Perovskite_ML_Environment
 ```
+
+### DGL (for ALIGNN only)
+
+ALIGNN requires DGL. We keep `dgl/` untracked in Git; install DGL locally in your environment:
+
+- If you installed PyTorch 1.13.1 with CUDA 11.7 (as specified above):
+
+```bash
+# Option A: pip (recommended)
+pip install dgl-cu117 -f https://data.dgl.ai/wheels/torch-1.13/cu117/repo.html
+
+# Option B: conda
+conda install -c dglteam/label/cu117 dgl
+```
+
+Verify the install:
+
+```bash
+python -c "import dgl, torch; print('DGL', dgl.__version__, 'Torch', torch.__version__)"
+```
+
+If your CUDA/Torch versions differ, pick the matching wheel from the DGL wheel index (`https://www.dgl.ai/pages/start.html`).
 
 Afterwards, you can run the following three notebooks to reproduce the main results of this paper:
 - [`1_model_training.ipynb`](1_model_training.ipynb): Train GCNNs and conduct hyperparameter optimization.

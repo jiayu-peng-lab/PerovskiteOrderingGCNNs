@@ -103,58 +103,98 @@ def run_wandb_experiment(struct_type,model_type,gpu_num,experiment_id=None,paral
 
     # Define the training function for the sweep
     def train_function():
-        # Initialize wandb run
-        wandb.init()
-        
-        # Get hyperparameters from wandb
-        hyperparameters = dict(wandb.config)
-        
-        # Convert hyperparameters to expected format
-        hyperparameters = convert_hyperparameters(hyperparameters)
-        
-        # Train model
-        val_loss = wandb_evaluate_model(data_name,hyperparameters,processed_data,target_prop,interpolation,struct_type,model_type,contrastive_weight,training_fraction,training_seed,sweep_id,obs_budget,gpu_num,nickname)
-        
-        # Log final validation loss
-        wandb.log({"val_mae": val_loss})
-        
-        # Save model files permanently (equivalent to sigopt storage)
-        run_id = wandb.run.id
-        model_save_dir = './saved_models/'+ model_type + '/' + wandb_name + '/wandb-' + str(sweep_id) + '/observ_' + str(run_id)
-        model_tmp_dir = './saved_models/'+ model_type + '/' + wandb_name + '/wandb-' + str(run_id) + '/' + nickname + '_tmp' + str(gpu_num)
-        
-        # Ensure the temporary directory exists
-        if not os.path.exists(model_tmp_dir):
-            os.makedirs(model_tmp_dir)
-        
-        # Save hyperparameters and training results
-        training_results = {"validation_loss": val_loss}
-        with open(model_tmp_dir + '/hyperparameters.json', 'w') as file:
-            json.dump(hyperparameters, file)
-        with open(model_tmp_dir + '/training_results.json', 'w') as file:
-            json.dump(training_results, file)
-        
-        # Create permanent save directory
-        if not os.path.exists(model_save_dir):
-            os.makedirs(model_save_dir)
-        
-        # Copy contents of tmp file to permanent location
-        possible_file_names = ["best_model", "best_model.pth.tar", "best_model.torch",
-                               "final_model.torch","final_model","final_model.pth.tar",
-                               "log_human_read.csv","checkpoints/checkpoint-100.pth.tar",
-                               'hyperparameters.json','training_results.json']
-        for file_name in possible_file_names:
-            if os.path.isfile(model_tmp_dir + "/" + file_name):
-                if file_name == "checkpoints/checkpoint-100.pth.tar":
-                    shutil.move(model_tmp_dir + "/" + file_name, model_save_dir + "/" + "checkpoint-100.pth.tar")
-                else:
-                    shutil.move(model_tmp_dir + "/" + file_name, model_save_dir + "/" + file_name)
-        
-        # Clean up tmp directory
-        shutil.rmtree(model_tmp_dir)
-        torch.cuda.empty_cache()
+        try:
+            # Initialize wandb run
+            wandb.init()
+            
+            # Get hyperparameters from wandb
+            hyperparameters = dict(wandb.config)
+            
+            # Convert hyperparameters to expected format
+            hyperparameters = convert_hyperparameters(hyperparameters)
+            
+            # Train model
+            val_loss = wandb_evaluate_model(
+                data_name,
+                hyperparameters,
+                processed_data,
+                target_prop,
+                interpolation,
+                struct_type,
+                model_type,
+                contrastive_weight,
+                training_fraction,
+                training_seed,
+                sweep_id,
+                obs_budget,
+                gpu_num,
+                nickname
+            )
+            
+            # Log final validation loss
+            wandb.log({"val_mae": val_loss})
+            
+            # Save model files permanently (equivalent to sigopt storage)
+            run_id = wandb.run.id
+            model_save_dir = './saved_models/'+ model_type + '/' + wandb_name + '/wandb-' + str(sweep_id) + '/observ_' + str(run_id)
+            model_tmp_dir = './saved_models/'+ model_type + '/' + wandb_name + '/wandb-' + str(run_id) + '/' + nickname + '_tmp' + str(gpu_num)
+            
+            # Ensure the temporary directory exists
+            if not os.path.exists(model_tmp_dir):
+                os.makedirs(model_tmp_dir)
+            
+            # Save hyperparameters and training results
+            training_results = {"validation_loss": val_loss}
+            with open(model_tmp_dir + '/hyperparameters.json', 'w') as file:
+                json.dump(hyperparameters, file)
+            with open(model_tmp_dir + '/training_results.json', 'w') as file:
+                json.dump(training_results, file)
+            
+            # Create permanent save directory
+            if not os.path.exists(model_save_dir):
+                os.makedirs(model_save_dir)
+            
+            # Copy contents of tmp file to permanent location
+            possible_file_names = ["best_model", "best_model.pth.tar", "best_model.torch",
+                                   "final_model.torch","final_model","final_model.pth.tar",
+                                   "log_human_read.csv","checkpoints/checkpoint-100.pth.tar",
+                                   'hyperparameters.json','training_results.json']
+            for file_name in possible_file_names:
+                if os.path.isfile(model_tmp_dir + "/" + file_name):
+                    if file_name == "checkpoints/checkpoint-100.pth.tar":
+                        shutil.move(model_tmp_dir + "/" + file_name, model_save_dir + "/" + "checkpoint-100.pth.tar")
+                    else:
+                        shutil.move(model_tmp_dir + "/" + file_name, model_save_dir + "/" + file_name)
+            
+            # Clean up tmp directory
+            shutil.rmtree(model_tmp_dir)
+            torch.cuda.empty_cache()
+        finally:
+            # Always finish the wandb run to prevent empty dirs
+            try:
+                wandb.finish()
+            except Exception:
+                pass
+            # Cleanup empty local wandb run directories
+            try:
+                wandb_dir = os.path.join(os.getcwd(), 'wandb')
+                if os.path.isdir(wandb_dir):
+                    for entry in os.listdir(wandb_dir):
+                        entry_path = os.path.join(wandb_dir, entry)
+                        if os.path.isdir(entry_path):
+                            try:
+                                # Remove dir if empty
+                                if not os.listdir(entry_path):
+                                    os.rmdir(entry_path)
+                            except Exception:
+                                pass
+            except Exception:
+                pass
     
-    # Run the sweep with remaining budget
+    # Run the sweep with remaining budget (skip when 0 to avoid creating empty runs)
+    if remaining_budget is None or remaining_budget <= 0:
+        print("No remaining runs to execute; skipping wandb.agent.")
+        return
     wandb.agent(sweep_id, train_function, count=remaining_budget)
     
     print(f"Completed wandb sweep with {remaining_budget} observations")
@@ -182,14 +222,14 @@ def wandb_evaluate_model(data_name,hyperparameters,processed_data,target_prop,in
     # Convert hyperparameters to expected format
     hyperparameters = convert_hyperparameters(hyperparameters)
 
-    train_loader = get_dataloader(train_data,target_prop,model_type,hyperparameters["batch_size"],interpolation,per_site=per_site)
+    train_loader = get_dataloader(train_data,target_prop,model_type,hyperparameters["batch_size"],interpolation,per_site=per_site,device=device)
     train_eval_loader = None
 
     if "e3nn" in model_type and "pretrain" not in data_name and "per_site" not in target_prop:
-        train_eval_loader = get_dataloader(train_data,target_prop,"e3nn_contrastive",1,interpolation,per_site=per_site)
-        val_loader = get_dataloader(validation_data,target_prop,"e3nn_contrastive",1,interpolation,per_site=per_site)
+        train_eval_loader = get_dataloader(train_data,target_prop,"e3nn_contrastive",1,interpolation,per_site=per_site,device=device)
+        val_loader = get_dataloader(validation_data,target_prop,"e3nn_contrastive",1,interpolation,per_site=per_site,device=device)
     else:
-        val_loader = get_dataloader(validation_data,target_prop,model_type,1,interpolation,per_site=per_site)
+        val_loader = get_dataloader(validation_data,target_prop,model_type,1,interpolation,per_site=per_site,device=device)
     
     # Pass hyperparameters as positional argument
     model, normalizer = create_model(model_type, train_loader, interpolation, target_prop, hyperparameters, per_site=per_site)
@@ -229,16 +269,22 @@ def create_wandb_experiment(data_name,target_prop,struct_type,interpolation,mode
         sweep_config = get_painn_hyperparameter_range()
     elif model_type == "CGCNN":
         sweep_config = get_cgcnn_hyperparameter_range()
+    elif model_type == "ALIGNN":
+        sweep_config = get_alignn_hyperparameter_range()
     else:
         sweep_config = get_e3nn_hyperparameter_range()
     
-    # Create project name based on model type and structure type
-    # 6 different project names: CGCNN-unrelaxed, CGCNN-relaxed, e3nn-unrelaxed, e3nn-relaxed, Painn-unrelaxed, Painn-relaxed
+    # Create project name based on model type, structure type, and training fraction
+    # 6 base project names: CGCNN-unrelaxed, CGCNN-relaxed, e3nn-unrelaxed, e3nn-relaxed, Painn-unrelaxed, Painn-relaxed
     if struct_type in ["unrelaxed", "relaxed"]:
         project_name = f"perovskite-ordering-{model_type.lower()}-{struct_type}"
     else:
         # For other structure types, use a generic name
         project_name = f"perovskite-ordering-{model_type.lower()}-{struct_type}"
+
+    # Append training fraction to project name for disambiguation when not full data
+    if training_fraction is not None and float(training_fraction) != 1.0:
+        project_name = f"{project_name}-frac-{training_fraction}"
     
     # Add project and program info
     sweep_config.update({

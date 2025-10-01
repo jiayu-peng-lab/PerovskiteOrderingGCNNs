@@ -148,6 +148,16 @@ def get_model_layer(model,model_type,depth):
             print("Depth Not Supported")
             return None
 
+    elif "ALIGNN" in model_type:
+
+        # For ALIGNN, use the pooled graph representation right before the final FC.
+        # Hooking on model.fc will provide its input (the embedding vector) via input[0].
+        if hasattr(model, "fc"):
+            return model.fc
+        else:
+            print("ALIGNN model does not have attribute 'fc'")
+            return None
+
     elif "CGCNN" in model_type:
 
         if depth == 0:
