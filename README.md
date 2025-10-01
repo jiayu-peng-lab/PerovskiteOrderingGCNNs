@@ -75,7 +75,7 @@ conda activate Perovskite_ML_Environment
 
 ### DGL (for ALIGNN only)
 
-ALIGNN requires DGL. We keep `dgl/` untracked in Git; install DGL locally in your environment:
+ALIGNN requires [DGL](https://www.dgl.ai/). We keep `dgl/` untracked in Git; install DGL locally in your environment:
 
 - If you installed PyTorch 1.13.1 with CUDA 11.7 (as specified above):
 
