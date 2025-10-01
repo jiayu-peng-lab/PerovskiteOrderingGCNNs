@@ -107,11 +107,22 @@ def get_model_prediction(test_set_type, model_params, gpu_num, target_prop, num_
     
     # Wandb name building (active)
     wandb_name = build_wandb_name(model_params["data"], target_prop, model_params["struct_type"], model_params["interpolation"], model_params["model_type"],contrastive_weight=model_params["contrastive_weight"],training_fraction=model_params["training_fraction"],long_range=model_params["long_range"])
-    # exp_id = get_experiment_id(model_params, target_prop)  # No longer needed for directory
+
+    # Try to get experiment id from inference/experiment_ids.json; if "none" or missing, omit it from the path
+    try:
+        exp_id = get_experiment_id(model_params, target_prop)
+    except Exception:
+        exp_id = None
+
+    if isinstance(exp_id, str) and exp_id.lower() == "none":
+        exp_id = None
 
     for idx in range(num_best_models):
-        # Updated directory structure: no exp_id in path
-        directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/" + "best_" + str(idx)
+        # Prefer path with exp_id when available
+        if exp_id is None:
+            directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/" + "best_" + str(idx)
+        else:
+            directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/" + str(exp_id) + "/" + "best_" + str(idx)
         model, normalizer = load_model(gpu_num, train_loader, model_params, directory, target_prop,per_site=per_site)
         start_3 = time.time()
         prediction = evaluate_model_with_tracked_ids(model, normalizer, gpu_num, test_loader, model_params)

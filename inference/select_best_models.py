@@ -189,7 +189,20 @@ def keep_the_best_few_models(model_params, num_best_models=3, target_prop="dft_e
     parent_dir = saved_models_path + model_params["model_type"] + "/" + wandb_name
     wandb_dir = find_wandb_folder(parent_dir)
     old_directory_prefix = wandb_dir
-    new_directory_prefix = "./best_models/" + model_params["model_type"] + "/" + wandb_name
+
+    # Use experiment ID (from inference/experiment_ids.json) as an intermediate folder when available
+    try:
+        exp_id = get_experiment_id(model_params, target_prop)
+    except Exception:
+        exp_id = None
+
+    if isinstance(exp_id, str) and exp_id.lower() == "none":
+        exp_id = None
+
+    if exp_id is None:
+        new_directory_prefix = "./best_models/" + model_params["model_type"] + "/" + wandb_name
+    else:
+        new_directory_prefix = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/" + str(exp_id)
 
     # Load the results CSV from the wandb_dir
     reverify_wandb_models_results = pd.read_csv(os.path.join(wandb_dir, 'reverify_wandb_models_results.csv'), index_col=0)

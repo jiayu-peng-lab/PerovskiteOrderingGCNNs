@@ -23,32 +23,22 @@ def get_datapoint(target_prop, model, interp, training_fraction, struct):
     # Wandb name building (active)
     wandb_name = build_wandb_name(model_params["data"], target_prop, model_params["struct_type"], model_params["interpolation"], model_params["model_type"],contrastive_weight=model_params["contrastive_weight"],training_fraction=model_params["training_fraction"])
     
-    # Handle different directory structures based on training fraction and model type
-    if training_fraction == 1.0:
-        # For full training fraction, check if we need experiment ID
-        try:
-            exp_id = get_experiment_id(model_params, target_prop)
-            if exp_id == "none" or model_params["model_type"] in ["ALIGNN"]:
-                # ALIGNN and some others have files directly in wandb_name/best_X/
-                directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
-            else:
-                # Other models with experiment ID
-                directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/" + str(exp_id) + "/best_"
-        except:
-            # Fallback to direct path for models without experiment IDs
-            directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
+    # Resolve directory using experiment_ids.json when available; gracefully fall back
+    try:
+        exp_id = get_experiment_id(model_params, target_prop)
+    except Exception:
+        exp_id = None
+
+    if isinstance(exp_id, str) and exp_id.lower() == "none":
+        exp_id = None
+
+    if exp_id is None:
+        directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
     else:
-        # For partial training fractions, files are in wandb_name/experiment_id/best_X/
-        try:
-            exp_id = get_experiment_id(model_params, target_prop)
-            directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/" + str(exp_id) + "/best_"
-        except:
-            # Fallback to direct path for models without experiment IDs
-            directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
+        directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/" + str(exp_id) + "/best_"
 
     # Check if the directory exists, if not try without experiment ID
     if not os.path.exists(directory + "0"):
-        # Try without experiment ID
         directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/best_"
     
     # Check if any of the required files exist
