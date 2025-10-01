@@ -73,6 +73,28 @@ conda env create -f environment.yml
 conda activate Perovskite_ML_Environment
 ```
 
+### DGL (for ALIGNN only)
+
+ALIGNN requires DGL. We keep `dgl/` untracked in Git; install DGL locally in your environment:
+
+- If you installed PyTorch 1.13.1 with CUDA 11.7 (as specified above):
+
+```bash
+# Option A: pip (recommended)
+pip install dgl-cu117 -f https://data.dgl.ai/wheels/torch-1.13/cu117/repo.html
+
+# Option B: conda
+conda install -c dglteam/label/cu117 dgl
+```
+
+Verify the install:
+
+```bash
+python -c "import dgl, torch; print('DGL', dgl.__version__, 'Torch', torch.__version__)"
+```
+
+If your CUDA/Torch versions differ, pick the matching wheel from the DGL wheel index (`https://www.dgl.ai/pages/start.html`).
+
 Afterwards, you can run the following three notebooks to reproduce the main results of this paper:
 - [`1_model_training.ipynb`](1_model_training.ipynb): Train GCNNs and conduct hyperparameter optimization.
 - [`2_model_inference.ipynb`](2_model_inference.ipynb): Verify performance, select top models, compute predictions, and extract latent embeddings.
