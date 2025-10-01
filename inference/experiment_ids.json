@@ -19,12 +19,12 @@
     "dft_e_hull_htvs_data_M3Gnet_relaxed_e3nn": 837629,
     "dft_e_hull_htvs_data_unrelaxed_Painn": 837609,
     "dft_e_hull_htvs_data_relaxed_Painn": 3,
-    "dft_e_hull_htvs_data_unrelaxed_ALIGNN": "none",
-    "dft_e_hull_htvs_data_relaxed_ALIGNN": "none",
-    "dft_e_hull_htvs_data_unrelaxed_ALIGNN_TrainingFraction0.5": "none",
-    "dft_e_hull_htvs_data_relaxed_ALIGNN_TrainingFraction0.25": "none",
-    "dft_e_hull_htvs_data_relaxed_ALIGNN_TrainingFraction0.125": "none",
-    "dft_e_hull_htvs_data_unrelaxed_ALIGNN_TrainingFraction0.25": "none",
-    "dft_e_hull_htvs_data_relaxed_ALIGNN_TrainingFraction0.5": "none",
-    "dft_e_hull_htvs_data_unrelaxed_ALIGNN_TrainingFraction0.125": "none"
+    "dft_e_hull_htvs_data_unrelaxed_ALIGNN": "wandb-i9iun9xf",
+    "dft_e_hull_htvs_data_relaxed_ALIGNN": "wandb-kjahfk",
+    "dft_e_hull_htvs_data_unrelaxed_ALIGNN_TrainingFraction0.5": "wandb-ieootarr",
+    "dft_e_hull_htvs_data_relaxed_ALIGNN_TrainingFraction0.25": "wandb-0hc07qv0",
+    "dft_e_hull_htvs_data_relaxed_ALIGNN_TrainingFraction0.125": "wandb-mkz5k2qu",
+    "dft_e_hull_htvs_data_unrelaxed_ALIGNN_TrainingFraction0.25": "wandb-e3w6kqw9",
+    "dft_e_hull_htvs_data_relaxed_ALIGNN_TrainingFraction0.5": "wandb-ux9wsizv",
+    "dft_e_hull_htvs_data_unrelaxed_ALIGNN_TrainingFraction0.125": "wandb-snyof1ug"
 }
