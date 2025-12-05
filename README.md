@@ -106,6 +106,71 @@ Afterwards, you can run the following three notebooks to reproduce the main resu
 
 If you're working on an HPC cluster with SLURM (such as [UB CCR](https://www.buffalo.edu/ccr.html)), you can use `salloc` for interactive sessions or `sbatch` for batch jobs with your conda environment.
 
+#### Conda Environment Setup on CCR/HPC Clusters
+
+This guide outlines best practices for setting up and running Conda environments in high-storage locations (`/vscratch`, `/scratch`, etc.) to avoid home directory quotas and path resolution conflicts common on clusters.
+
+##### 1. Relocate the Conda Package Cache
+
+By default, Conda stores downloaded package files in your home directory, which quickly fills up your quota. Redirect the **package cache** to a high-storage volume.
+
+1. **Identify a High-Storage Cache Location:** Choose a path like `/vscratch/grp-jypeng/kritarth/conda_cache`.
+
+2. **Edit the `.condarc` file:** Create or edit the configuration file in your home directory:
+   ```bash
+   nano ~/.condarc
+   ```
+
+3. **Add the cache path:** Insert the following lines, replacing the path with your chosen location:
+   ```yaml
+   pkgs_dirs:
+     - /vscratch/grp-jypeng/kritarth/conda_cache
+   ```
+
+4. **Clean Corrupted Files (Important!):** Remove any corrupted packages from your old home directory cache:
+   ```bash
+   conda clean --packages
+   ```
+
+##### 2. Environment Creation in High-Storage
+
+Always use the `--prefix` flag to install your environment in the high-storage location, keeping it separate from your home directory.
+
+**Command Syntax:**
+```bash
+conda env create -f environment.yml -p /path/to/high/storage/my_env_name
+```
+
+**Example:**
+```bash
+conda env create -f environment.yml -p /vscratch/grp-jypeng/kritarth/PerovskiteOrderingGCNNs/local_env
+```
+
+##### 3. Activation and Execution (Handling Path Errors)
+
+Due to complex cluster shell configurations, the `conda activate` command often fails to correctly update the shell's `$PATH`, leading to `CondaError` or `ModuleNotFoundError`.
+
+**A. Fixing the Activation Hook (Once per Session)**
+
+If you get the `CondaError: Run 'conda init'...`, you need to manually load the Conda functions into your current shell session:
+```bash
+source /user/kritarth/miniconda3/etc/profile.d/conda.sh
+```
+
+**B. Activating the Environment**
+
+After sourcing the above, activate your environment using the full path:
+```bash
+conda activate /vscratch/grp-jypeng/kritarth/PerovskiteOrderingGCNNs/local_env
+```
+
+**C. Explicit Execution (Guaranteed Fix)**
+
+Because the shell might still use the wrong Python executable, the **most reliable way** to run your script is to call the Python executable directly from your environment's `bin` folder:
+```bash
+/vscratch/grp-jypeng/kritarth/PerovskiteOrderingGCNNs/local_env/bin/python training/run_wandb_experiment.py ...
+```
+
 #### Interactive Session with `salloc`
 
 To get an interactive session with GPU access:
@@ -121,19 +186,32 @@ Once you have the interactive session, follow these steps:
    cd /path/to/PerovskiteOrderingGCNNs
    ```
 
-2. **Activate your conda environment:**
+2. **Source Conda functions (if needed):**
    ```bash
-   conda activate Perovskite_ML_Environment
+   source /user/kritarth/miniconda3/etc/profile.d/conda.sh
    ```
 
-3. **Run your experiment:**
+3. **Activate your conda environment:**
    ```bash
+   # If using default location:
+   conda activate Perovskite_ML_Environment
+   
+   # Or if using --prefix installation:
+   conda activate /vscratch/grp-jypeng/kritarth/PerovskiteOrderingGCNNs/local_env
+   ```
+
+4. **Run your experiment:**
+   ```bash
+   # Standard way (if activation worked correctly):
    python training/run_wandb_experiment.py --struct_type relaxed --model CGCNN --gpu 0 --budget 50 --training_fraction 1 --training_seed 0
+   
+   # Or use explicit Python path (most reliable, avoids path conflicts):
+   /vscratch/grp-jypeng/kritarth/PerovskiteOrderingGCNNs/local_env/bin/python training/run_wandb_experiment.py --struct_type relaxed --model CGCNN --gpu 0 --budget 50 --training_fraction 1 --training_seed 0
    ```
 
 #### Batch Jobs with `sbatch`
 
-Create a SLURM batch script (e.g., `run_training.sh`):
+Create a SLURM batch script (e.g., `run_training.sh`). For reliable job execution on CCR, use explicit paths and follow these best practices:
 
 ```bash
 #!/bin/bash
@@ -153,21 +231,29 @@ cd $SLURM_SUBMIT_DIR
 # Create log directory
 mkdir -p logs
 
-# Activate conda environment
-source $(conda info --base)/etc/profile.d/conda.sh
-conda activate Perovskite_ML_Environment
+# 1. Load the cluster's base Conda module (if required by your system)
+module load miniconda
+
+# 2. Source the Conda functions (recommended)
+source /user/kritarth/miniconda3/etc/profile.d/conda.sh
+
+# 3. Activate the environment (optional, but recommended)
+# Replace with your actual environment path if using --prefix installation
+conda activate /vscratch/grp-jypeng/kritarth/PerovskiteOrderingGCNNs/local_env
 
 # Set environment variables (optional, for cache directories)
 export MPLCONFIGDIR=$HOME/.cache/matplotlib
 export PIP_CACHE_DIR=$HOME/.cache/pip
 
-# Run your experiment
-python training/run_wandb_experiment.py --struct_type relaxed --model CGCNN --gpu 0 --budget 50 --training_fraction 1 --training_seed 0
+# 4. CRITICAL: Execute using the environment's absolute Python path
+# This ensures the correct Python interpreter is used, avoiding path conflicts
+/vscratch/grp-jypeng/kritarth/PerovskiteOrderingGCNNs/local_env/bin/python training/run_wandb_experiment.py --struct_type relaxed --model CGCNN --gpu 0 --budget 50 --training_fraction 1 --training_seed 0
 ```
 
 **Important notes for using conda with sbatch:**
 
-- **Activate conda properly**: Use `source $(conda info --base)/etc/profile.d/conda.sh` before `conda activate` to ensure conda is properly initialized in the batch script environment.
+- **Use explicit Python path**: Always use the full path to your environment's Python executable (`/path/to/env/bin/python`) to avoid path resolution conflicts with cluster Python installations.
+- **Activate conda properly**: Use `source $(conda info --base)/etc/profile.d/conda.sh` or the explicit path before `conda activate` to ensure conda is properly initialized.
 - **GPU selection**: The `--gpu 0` argument in your Python script will use the GPU allocated by SLURM via `--gres=gpu:1`.
 - **Resume sweeps**: To resume a previous WandB sweep, add `--resume_sweep_id <sweep_id>` to the Python command.
 - **Monitor jobs**: Use `squeue -u $USER` to check job status, and `tail -f logs/training_<job_id>.log` to monitor output.
