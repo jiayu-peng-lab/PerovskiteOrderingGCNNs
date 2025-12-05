@@ -104,150 +104,78 @@ Afterwards, you can run the following three notebooks to reproduce the main resu
 
 ### 🖥️ If working on an HPC cluster
 
-An example is provided here for running deep learning codes on HPC clusters (such as those in [UB CCR](https://www.buffalo.edu/ccr.html)) using containers (for Conda) and the Slurm job scheduler.
+If you're working on an HPC cluster with SLURM (such as [UB CCR](https://www.buffalo.edu/ccr.html)), you can use `salloc` for interactive sessions or `sbatch` for batch jobs with your conda environment.
 
-#### 1. Create a Singularity/Apptainer `.def` file from `environment.yml` or `requirements.txt`:
+#### Interactive Session with `salloc`
 
-To set the Apptainer cache directory, run:
-
-```bash
-export APPTAINER_CACHEDIR="$(pwd)/.apptainer_cache"
-```
-
-Example `.def` file:
-
-```text
-Bootstrap: docker
-From: continuumio/miniconda3:latest
-
-%post
-    # Create environment.yml directly in the container
-    cat > /tmp/environment.yml << 'EOF'
-name: perovskite_env
-channels:
-  - pyg
-  - pytorch
-  - nvidia
-  - conda-forge
-  - defaults
-dependencies:
-  - python=3.10.11
-  - pytorch=1.13.1
-  - pytorch-cuda=11.7
-  # ... additional dependencies
-EOF
-    
-    # Create the conda environment
-    conda env create -f /tmp/environment.yml
-    conda clean -a
-    
-    # Make sure the environment is activated by default
-    echo "source activate perovskite_env" >> ~/.bashrc
-
-%environment
-    export PATH=/opt/conda/envs/perovskite_env/bin:$PATH
-    export CONDA_DEFAULT_ENV=perovskite_env
-
-%runscript
-    exec "$@"
-```
-
-#### 2. Run job on the UB CCR (two options):
-
-##### 2A. Submitting Jobs
-
-You can edit `scripts/run_container_job.sh` to set the desired model and dataset by changing the `MODEL` and `DATASET` variables in the script.
-
-- `MODEL`: Specifies which graph neural network architecture to use. Set to either `CGCNN` or `e3nn`.
-  - Example: `MODEL="CGCNN"` or `MODEL="e3nn"`
-- `DATASET`: Specifies which dataset to use for the experiment. Set to either `relaxed` or `unrelaxed`.
-  - Example: `DATASET="relaxed"` or `DATASET="unrelaxed"`
-
-To change these, open `scripts/run_container_job.sh` in a text editor and modify the lines:
-
-```bash
-MODEL="CGCNN"         # or "e3nn"
-DATASET="relaxed"     # or "unrelaxed"
-```
-
-The script also passes several command-line arguments to the Python experiment script:
-
-- `--budget 50`: Number of hyperparameter optimization trials or max training runs.
-- `--training_fraction 1`: Fraction of the available training data to use (1 = 100%).
-- `--training_seed 0`: Random seed for reproducibility.
-- `--gpu 0`: Which GPU to use inside the container.
-- `--resume_sweep_id <sweep_id>`: (Optional) Resume a previous hyperparameter sweep.
-
-To change these arguments, edit the last line of the script:
-
-```bash
-python training/run_wandb_experiment.py --struct_type $DATASET --model $MODEL --gpu 0 --budget 50 --training_fraction 1 --training_seed 0
-```
-
-Change the values as needed for your experiment.
-
-Once you have set the desired options, run the script with:
-
-```bash
-bash scripts/run_container_job.sh
-```
-
-##### 2B. Interactive Shell
-
-Use this command to get the resource to perform the computation:
+To get an interactive session with GPU access:
 
 ```bash
 salloc --partition=general-compute --qos=general-compute --mem=64G --time=72:00:00 --gpus-per-node=1
 ```
 
-Then, in your interactive session, follow these steps:
+Once you have the interactive session, follow these steps:
 
-1. **(If needed) Load Apptainer/Singularity (module name may vary by cluster):**
-   ```bash
-   module load apptainer  # or singularity
-   ```
-
-2. **Navigate to your project directory (if not already there):**
+1. **Navigate to your project directory:**
    ```bash
    cd /path/to/PerovskiteOrderingGCNNs
    ```
 
-3. **Start an interactive shell inside the container:**
+2. **Activate your conda environment:**
    ```bash
-   apptainer shell --nv --bind $(pwd):/workspace --pwd /workspace perovskite_exp.sif
+   conda activate Perovskite_ML_Environment
    ```
 
-4. **Activate the conda environment inside the container:**
-   ```bash
-   source activate perovskite_env
-   ```
-
-5. **(Optional) Set up cache directories for matplotlib, pip, etc.:**
-   ```bash
-   mkdir -p /workspace/cache/{matplotlib,pip,fontconfig}
-   export MPLCONFIGDIR=/workspace/cache/matplotlib
-   export PIP_CACHE_DIR=/workspace/cache/pip
-   export FONTCONFIG_PATH=/workspace/cache/fontconfig
-   export XDG_CACHE_HOME=/workspace/cache
-   export PYTHONPATH=/workspace:/workspace/local_packages:$PYTHONPATH
-   ```
-
-6. **Run your experiment (example):**
+3. **Run your experiment:**
    ```bash
    python training/run_wandb_experiment.py --struct_type relaxed --model CGCNN --gpu 0 --budget 50 --training_fraction 1 --training_seed 0
    ```
-   - Change `--struct_type` to `unrelaxed` and `--model` to `e3nn` as needed.
-   - Adjust other arguments as desired (see above for details).
 
-Once you have set the desired options, run your experiment with:
+#### Batch Jobs with `sbatch`
+
+Create a SLURM batch script (e.g., `run_training.sh`):
 
 ```bash
+#!/bin/bash
+#SBATCH --job-name=perovskite_training
+#SBATCH --output=logs/training_%j.log
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=64G
+#SBATCH --gres=gpu:1
+#SBATCH --time=72:00:00
+#SBATCH --partition=general-compute
+#SBATCH --qos=general-compute
+
+# Navigate to project directory
+cd $SLURM_SUBMIT_DIR
+
+# Create log directory
+mkdir -p logs
+
+# Activate conda environment
+source $(conda info --base)/etc/profile.d/conda.sh
+conda activate Perovskite_ML_Environment
+
+# Set environment variables (optional, for cache directories)
+export MPLCONFIGDIR=$HOME/.cache/matplotlib
+export PIP_CACHE_DIR=$HOME/.cache/pip
+
+# Run your experiment
 python training/run_wandb_experiment.py --struct_type relaxed --model CGCNN --gpu 0 --budget 50 --training_fraction 1 --training_seed 0
 ```
 
-7. **To resume a previous sweep, add the `--resume_sweep_id <sweep_id>` argument.**
+**Important notes for using conda with sbatch:**
 
-This approach allows you to run and debug your experiments interactively, monitor outputs in real time, and make adjustments as needed.
+- **Activate conda properly**: Use `source $(conda info --base)/etc/profile.d/conda.sh` before `conda activate` to ensure conda is properly initialized in the batch script environment.
+- **GPU selection**: The `--gpu 0` argument in your Python script will use the GPU allocated by SLURM via `--gres=gpu:1`.
+- **Resume sweeps**: To resume a previous WandB sweep, add `--resume_sweep_id <sweep_id>` to the Python command.
+- **Monitor jobs**: Use `squeue -u $USER` to check job status, and `tail -f logs/training_<job_id>.log` to monitor output.
+
+Submit the job with:
+```bash
+sbatch run_training.sh
+```
 
 ---
 
