@@ -20,7 +20,7 @@ cd PerovskiteOrderingGCNNs
 git submodule update --init
 ```
 
-Our codes are built upon previous implementations of [CGCNN](https://github.com/-mit/PerovskiteOrderingGCNNs_cgcnn/tree/af4c0bf6606da1b46887ed8c29521d199d5e2798), [e3nn](https://github.com/learningmatter-mit/PerovskiteOrderingGCNNs_e3nn/tree/408b90e922a2a9c7bae2ad95433aae97d1a58494), [PaiNN](https://github.com/learningmatter-mit/PerovskiteOrderingGCNNs_painn/tree/e7980a52af4936addc5fb03dbc50d4fc74fe98fc), and [ALIGNN](https://github.com/jiayu-peng-lab/PerovskiteOrderingGCNNs_alignn/tree/805884f442cb7cee2c515bc7cbd15b4ef2f31ee2), which are included as submodules in this repo. If there are any changes in their corresponding GitHub repos, the following command will update the submodules in this repo:
+Our codes are built upon previous implementations of [CGCNN](https://github.com/jiayu-peng-lab/PerovskiteOrderingGCNNs_cgcnn), [e3nn](https://github.com/jiayu-peng-lab/PerovskiteOrderingGCNNs_e3nn), [PaiNN](https://github.com/jiayu-peng-lab/PerovskiteOrderingGCNNs_painn), and [ALIGNN](https://github.com/jiayu-peng-lab/PerovskiteOrderingGCNNs_alignn), which are included as submodules in this repo. If there are any changes in their corresponding GitHub repos, the following command will update the submodules in this repo:
 ```
 git submodule update --remote --merge
 ```
@@ -40,7 +40,7 @@ This script will:
 - Set up the Conda environment (using the provided [environment.yml](environment.yml) if available).
 - Ensure you are ready to run the notebooks or scripts.
 
-Alternatively, you can download all our data and trained models manually; they are archived on Zenodo ([DOI: 10.5281/zenodo.13820311](https://doi.org/10.5281/zenodo.13820311)) and Materials Data Facility ([DOI: 10.18126/ncqt-rh18](https://doi.org/10.18126/ncqt-rh18)). Please place all data and model files in the corresponding directories and then refer to the following Jupyter notebooks to reproduce the results of our paper. Moreover, if you want to install the Conda environment manually, this repository requires the following packages to run correctly:
+Alternatively, you can download all our data and trained models manually; they are archived on Zenodo ([DOI: 10.5281/zenodo.13820311](https://doi.org/10.5281/zenodo.13820311)) and Materials Data Facility ([DOI: 10.18126/ncqt-rh18](https://doi.org/10.18126/ncqt-rh18)). Please place all data and model files in the corresponding directories and then refer to the following Jupyter notebooks below to reproduce the results of our paper. Moreover, if you want to install the Conda environment manually, this repository requires the following packages to run correctly:
 ```
 pandas            1.5.3
 scipy             1.10.1
@@ -75,7 +75,7 @@ conda activate Perovskite_ML_Environment
 
 ### DGL (for ALIGNN only)
 
-ALIGNN requires DGL. We keep `dgl/` untracked in Git; install DGL locally in your environment:
+ALIGNN requires [DGL](https://www.dgl.ai/). We keep `dgl/` untracked in Git; install DGL locally in your environment:
 
 - If you installed PyTorch 1.13.1 with CUDA 11.7 (as specified above):
 
@@ -175,7 +175,8 @@ Because the shell might still use the wrong Python executable, the **most reliab
 
 To get an interactive session with GPU access:
 
-```bash
+Use this command to get the resource to perform the computation:
+```
 salloc --partition=general-compute --qos=general-compute --mem=64G --time=72:00:00 --gpus-per-node=1
 ```
 
