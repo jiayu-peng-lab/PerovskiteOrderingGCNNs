@@ -11,7 +11,10 @@ best_models/CGCNN/
 best_models/Painn/
 best_models/e3nn/
 best_models/ALIGNN/
-
+._CGCNN
+._Painn
+._e3nn
+._ALIGNN
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
