@@ -40,7 +40,7 @@ This script will:
 - Set up the Conda environment (using the provided [environment.yml](environment.yml) if available).
 - Ensure you are ready to run the notebooks or scripts.
 
-Alternatively, you can download all our data and trained models manually; they are archived on Zenodo ([DOI: 10.5281/zenodo.13820311](https://doi.org/10.5281/zenodo.13820311)) and Materials Data Facility ([DOI: 10.18126/ncqt-rh18](https://doi.org/10.18126/ncqt-rh18)). Please place all data and model files in the corresponding directories, and then refer to the following Jupyter notebooks below to reproduce the results of our paper.
+Alternatively, you can download all our data and trained models manually; they are archived on Zenodo ([DOI: 10.5281/zenodo.18707688](https://doi.org/10.5281/zenodo.18707688)) and Materials Data Facility ([DOI: 10.18126/ncqt-rh18](https://doi.org/10.18126/ncqt-rh18)). Please place all data and model files in the corresponding directories, and then refer to the following Jupyter notebooks below to reproduce the results of our paper.
 
 Moreover, if you the Conda environment is not installed successfully or you want to do it manually, this repository requires the following packages to run correctly:
 ```
@@ -73,6 +73,8 @@ All these packages can be installed using the [`environment.yml`](environment.ym
 ```
 conda env create -f environment.yml
 conda activate Perovskite_ML_Environment
+pip install torch==2.2.0+cu121 torchvision==0.17.0+cu121 torchaudio==2.2.0+cu121 --index-url https://download.pytorch.org/whl/cu121
+pip install pyg-lib==0.4.0 torch-scatter torch-sparse torch-cluster torch-spline-conv -f https://data.pyg.org/whl/torch-2.2.0+cu121.html
 ```
 
 Afterwards, you can run the following three notebooks to reproduce the main results of this paper:

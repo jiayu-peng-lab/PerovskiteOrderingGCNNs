@@ -1,3 +1,4 @@
+import os
 import json
 import torch
 import pandas as pd
@@ -14,6 +15,44 @@ from inference.test_model_prediction import evaluate_model_with_tracked_ids, loa
 from nff.train.loss import build_mae_loss
 from nff.train.evaluate import evaluate
 from torch.autograd import Variable
+
+
+def _resolve_best_models_root(model_params, target_prop, wandb_name):
+    base_dir = os.path.join("./best_models", model_params["model_type"], wandb_name)
+    if not os.path.isdir(base_dir):
+        raise FileNotFoundError(f"Best-model base directory not found: {base_dir}")
+
+    try:
+        exp_id = get_experiment_id(model_params, target_prop)
+    except Exception:
+        exp_id = None
+
+    if isinstance(exp_id, str) and exp_id.lower() == "none":
+        exp_id = None
+
+    if exp_id is not None:
+        exp_dir = os.path.join(base_dir, str(exp_id))
+        if os.path.isdir(exp_dir):
+            return exp_dir
+
+    if os.path.isdir(os.path.join(base_dir, "best_0")):
+        return base_dir
+
+    candidate_dirs = []
+    for entry in os.listdir(base_dir):
+        full_path = os.path.join(base_dir, entry)
+        if os.path.isdir(full_path) and os.path.isdir(os.path.join(full_path, "best_0")):
+            candidate_dirs.append(full_path)
+
+    if len(candidate_dirs) == 1:
+        return candidate_dirs[0]
+    if len(candidate_dirs) > 1:
+        raise RuntimeError(
+            f"Multiple best-model roots found under {base_dir}: {candidate_dirs}"
+        )
+    raise FileNotFoundError(
+        f"No best-model root found under {base_dir} (expected 'best_0' folder)."
+    )
 
 
 def get_all_embeddings(model_params, gpu_num, num_best_models=3, target_prop="dft_e_hull", depth=0):
@@ -94,11 +133,10 @@ def get_model_embedding(test_set_type, model_params, gpu_num, num_best_models, t
     
     # Wandb name building (active)
     wandb_name = build_wandb_name(model_params["data"], target_prop, model_params["struct_type"], model_params["interpolation"], model_params["model_type"],contrastive_weight=model_params["contrastive_weight"],training_fraction=model_params["training_fraction"])
-    # exp_id = get_experiment_id(model_params, target_prop)  # No longer needed for directory
+    best_models_root = _resolve_best_models_root(model_params, target_prop, wandb_name)
 
     for idx in range(num_best_models):
-        # Updated directory structure: no exp_id in path
-        directory = "./best_models/" + model_params["model_type"] + "/" + wandb_name + "/" + "best_" + str(idx)
+        directory = os.path.join(best_models_root, "best_" + str(idx))
         model, normalizer = load_model(gpu_num, train_loader, model_params, directory, target_prop,per_site=False)
 
         activation = {}
@@ -126,7 +164,7 @@ def get_model_embedding(test_set_type, model_params, gpu_num, num_best_models, t
 
         infer_embedding["embedding"+"_"+str(depth)] = sorted_embeddings
 
-        infer_embedding.to_json(directory + '/' + test_set_type + "_embeddings"+"_"+str(depth)+".json")
+        infer_embedding.to_json(os.path.join(directory, test_set_type + "_embeddings"+"_"+str(depth)+".json"))
 
 
 def get_model_layer(model,model_type,depth):

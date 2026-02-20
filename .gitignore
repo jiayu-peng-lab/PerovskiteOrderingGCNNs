@@ -15,6 +15,7 @@ best_models/ALIGNN/
 ._Painn
 ._e3nn
 ._ALIGNN
+alignn_tmp_data_range
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

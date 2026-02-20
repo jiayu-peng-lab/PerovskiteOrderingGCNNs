@@ -42,16 +42,49 @@ def get_experiment_id(model_params, target_prop):
 
 def find_wandb_folder(parent_dir):
     """
-    Find the unique 'wandb-*' folder in the given parent directory.
-    Raises an error if none or more than one is found.
-    Returns the full path to the folder.
+    Find the run container folder in the given parent directory.
+    Preferred layout is a unique 'wandb-*' folder, but older runs may use
+    an experiment-id folder (e.g., '837611') directly.
     """
-    wandb_folders = [f for f in os.listdir(parent_dir) if f.startswith('wandb-') and os.path.isdir(os.path.join(parent_dir, f))]
-    if len(wandb_folders) == 0:
-        raise FileNotFoundError(f"No 'wandb-*' folder found in {parent_dir}")
+    if not os.path.isdir(parent_dir):
+        raise FileNotFoundError(f"Parent directory not found: {parent_dir}")
+
+    wandb_folders = [
+        f for f in os.listdir(parent_dir)
+        if f.startswith('wandb-') and os.path.isdir(os.path.join(parent_dir, f))
+    ]
+    if len(wandb_folders) == 1:
+        return os.path.join(parent_dir, wandb_folders[0])
     if len(wandb_folders) > 1:
         raise RuntimeError(f"Multiple 'wandb-*' folders found in {parent_dir}: {wandb_folders}")
-    return os.path.join(parent_dir, wandb_folders[0])
+
+    candidate_dirs = []
+    for f in os.listdir(parent_dir):
+        full_path = os.path.join(parent_dir, f)
+        if not os.path.isdir(full_path):
+            continue
+        if f.startswith("._"):
+            continue
+        try:
+            has_observ = any(
+                x.startswith("observ_") and os.path.isdir(os.path.join(full_path, x))
+                for x in os.listdir(full_path)
+            )
+        except OSError:
+            has_observ = False
+        if has_observ:
+            candidate_dirs.append(f)
+
+    if len(candidate_dirs) == 1:
+        return os.path.join(parent_dir, candidate_dirs[0])
+    if len(candidate_dirs) > 1:
+        raise RuntimeError(
+            f"Multiple candidate run folders found in {parent_dir}: {candidate_dirs}"
+        )
+
+    raise FileNotFoundError(
+        f"No 'wandb-*' or legacy run folder (with 'observ_*') found in {parent_dir}"
+    )
 
 def load_model(gpu_num, train_loader, target_prop, model_params, observ_folder_name, job_idx, per_site):
     """

@@ -9,12 +9,12 @@ echo_status() {
 
 # Download URLs
 data_url="https://zenodo.org/records/13820311/files/data_v1.1.tar.gz?download=1"
-best_models_url="https://zenodo.org/records/13820311/files/best_models.tar.gz?download=1"
+best_models_url="https://zenodo.org/records/18707688/files/best_models_v2.tar.gz?download=1"
 saved_models_url="https://zenodo.org/records/13820311/files/saved_models.tar.gz?download=1"
 
 # Output filenames
 data_tar="data_v1.1.tar.gz"
-best_models_tar="best_models.tar.gz"
+best_models_tar="best_models_v2.tar.gz"
 saved_models_tar="saved_models.tar.gz"
 
 # Check if pv is installed for progress bar, else try to install it

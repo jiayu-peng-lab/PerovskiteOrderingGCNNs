@@ -13,6 +13,7 @@ import sys
 sys.path.append('models/PerovskiteOrderingGCNNs_painn/')
 from nff.data import Dataset, collate_dicts
 from models.PerovskiteOrderingGCNNs_alignn.alignn.dataset import get_torch_dataset
+from models.PerovskiteOrderingGCNNs_alignn.alignn.graphs import compute_bond_cosines
 import torch
 import dgl
 
@@ -23,8 +24,43 @@ class AlignnCollateFunction:
         self.device = device
     
     def __call__(self, samples):
-        """Custom collate function that moves everything to GPU and extracts crystal indices"""
-        graphs, line_graphs, lattices, labels, ids = map(list, zip(*samples))
+        """CPU-only collate function; device transfer is handled in training loop."""
+        if len(samples) == 0:
+            raise ValueError("Received empty sample list in ALIGNN collate function.")
+
+        first = samples[0]
+        if not isinstance(first, (list, tuple)):
+            raise ValueError(f"Unexpected ALIGNN sample type: {type(first)}")
+
+        line_graphs = None
+        if len(first) == 5:
+            # (graph, line_graph, lattice, label, id)
+            graphs, line_graphs, lattices, labels, ids = map(list, zip(*samples))
+        elif len(first) == 4:
+            # Either:
+            # (graph, line_graph, lattice, label) OR (graph, lattice, label, id)
+            if isinstance(first[1], dgl.DGLGraph):
+                graphs, line_graphs, lattices, labels = map(list, zip(*samples))
+                ids = [None] * len(graphs)
+            else:
+                graphs, lattices, labels, ids = map(list, zip(*samples))
+        elif len(first) == 3:
+            # (graph, lattice, label)
+            graphs, lattices, labels = map(list, zip(*samples))
+            ids = [None] * len(graphs)
+        else:
+            raise ValueError(
+                f"Unexpected ALIGNN sample length: {len(first)}. "
+                "Expected 3, 4, or 5 fields."
+            )
+        
+        # Build line graphs if dataset did not provide them.
+        if line_graphs is None:
+            line_graphs = []
+            for graph in graphs:
+                lg = graph.line_graph(shared=True)
+                lg.apply_edges(compute_bond_cosines)
+                line_graphs.append(lg)
         
         # Batch graphs on CPU first
         batched_graph = dgl.batch(graphs)
@@ -40,16 +76,6 @@ class AlignnCollateFunction:
             lattices_tensor = torch.stack(lattices)
         else:
             lattices_tensor = torch.tensor(lattices, dtype=torch.float32)
-        
-        # Move everything to GPU (since we're not using multiprocessing)
-        try:
-            batched_graph = batched_graph.to(self.device)
-            batched_line_graph = batched_line_graph.to(self.device)
-            labels_tensor = labels_tensor.to(self.device)
-            lattices_tensor = lattices_tensor.to(self.device)
-        except Exception as e:
-            print(f"Warning: Could not move data to GPU: {e}")
-            print("Data will remain on CPU")
         
         # Return in CGCNN format: (input_data, targets, crystal_ids)
         return (batched_graph, batched_line_graph, lattices_tensor), labels_tensor, ids

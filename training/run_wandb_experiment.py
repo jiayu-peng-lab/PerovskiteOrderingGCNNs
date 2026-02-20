@@ -9,6 +9,7 @@ import random
 import shutil
 import os
 import wandb
+import warnings
 from processing.utils import filter_data_by_properties,select_structures
 from processing.interpolation.Interpolation import *
 from processing.dataloader.dataloader import get_dataloader
@@ -17,6 +18,13 @@ from training.hyperparameters.wandb_parameters import *
 from training.model_training.trainer import *
 from training.wandb_utils import build_wandb_name
 from training.evaluate import *
+
+# Suppress known non-fatal pydantic serializer noise from third-party configs.
+warnings.filterwarnings(
+    "ignore",
+    message=r"Pydantic serializer warnings:\s+Expected `list\[str\]` but got `tuple`",
+    category=UserWarning,
+)
 
 
 def run_wandb_experiment(struct_type,model_type,gpu_num,experiment_id=None,parallel_band=1,obs_budget=50,training_fraction=1.0,data_name="data/",target_prop="dft_e_hull",interpolation=False,contrastive_weight=1.0,training_seed=0,nickname="",resume_sweep_id=None):
