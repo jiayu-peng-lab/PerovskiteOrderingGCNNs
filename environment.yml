@@ -1,15 +1,16 @@
 name: Perovskite_ML_Environment
 channels:
-  - pyg
   - pytorch
   - nvidia
-  - conda-forge
   - defaults
+  - conda-forge
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
   - appdirs=1.4.4=pyhd3eb1b0_0
   - asttokens=2.4.1=pyhd8ed1ab_0
+  - babel=2.18.0=pyhcf101f3_0
+  - backrefs=5.8=pyhd8ed1ab_0
   - blas=1.0=mkl
   - bokeh=3.3.4=py310h2f386ee_0
   - bottleneck=1.3.5=py310ha9d4c09_0
@@ -17,10 +18,10 @@ dependencies:
   - brotli-bin=1.0.9=h5eee18b_7
   - brotlipy=0.7.0=py310h7f8727e_1002
   - bzip2=1.0.8=h7b6447c_0
-  - ca-certificates=2024.2.2=hbcca054_0
-  - certifi=2024.2.2=pyhd8ed1ab_0
+  - ca-certificates=2026.1.4=hbd8a1cb_0
+  - certifi=2026.1.4=pyhd8ed1ab_0
   - cffi=1.15.1=py310h5eee18b_3
-  - charset-normalizer=2.0.4=pyhd3eb1b0_0
+  - colorama=0.4.6=pyhd8ed1ab_1
   - comm=0.2.1=pyhd8ed1ab_0
   - contourpy=1.0.2=py310hbf28c38_2
   - cryptography=39.0.1=py310h9ce1e76_0
@@ -39,15 +40,17 @@ dependencies:
   - ffmpeg=4.3=hf484d3e_0
   - fonttools=4.33.3=py310h5764c6d_0
   - freetype=2.12.1=h4a9f257_0
+  - ghp-import=2.1.0=pyhd8ed1ab_2
   - giflib=5.2.1=h5eee18b_3
   - gmp=6.2.1=h295c915_3
   - gnutls=3.6.15=he1e5248_0
-  - idna=3.4=py310h06a4308_0
+  - importlib-metadata=8.7.0=pyhe01879c_1
+  - inflect=7.5.0=pyhd8ed1ab_0
   - intel-openmp=2023.1.0=hdb19cb5_46305
   - ipykernel=6.29.3=pyhd33586a_0
   - ipython=8.22.1=pyh707e725_0
+  - jarvis-tools=2025.9.30=pyhd8ed1ab_0
   - jedi=0.19.1=pyhd8ed1ab_0
-  - jinja2=3.1.2=py310h06a4308_0
   - joblib=1.1.1=py310h06a4308_0
   - jpeg=9e=h5eee18b_1
   - jupyter_client=7.3.4=pyhd8ed1ab_0
@@ -57,9 +60,11 @@ dependencies:
   - lcms2=2.12=h3be6417_0
   - ld_impl_linux-64=2.38=h1181459_1
   - lerc=3.0=h295c915_0
+  - libblas=3.9.0=1_h86c2bf4_netlib
   - libbrotlicommon=1.0.9=h5eee18b_7
   - libbrotlidec=1.0.9=h5eee18b_7
   - libbrotlienc=1.0.9=h5eee18b_7
+  - libcblas=3.9.0=5_h92ddd45_netlib
   - libcublas=11.10.3.66=0
   - libcufft=10.7.2.124=h4fbf590_0
   - libcufile=1.6.1.9=0
@@ -74,6 +79,7 @@ dependencies:
   - libgomp=11.2.0=h1234567_1
   - libiconv=1.16=h7f8727e_2
   - libidn2=2.3.4=h5eee18b_0
+  - liblapack=3.9.0=5_h92ddd45_netlib
   - libnpp=11.7.4.75=0
   - libnvjpeg=11.8.0.2=0
   - libpng=1.6.39=h5eee18b_0
@@ -86,13 +92,19 @@ dependencies:
   - libwebp=1.2.4=h11a3e52_1
   - libwebp-base=1.2.4=h5eee18b_1
   - lz4-c=1.9.4=h6a678d5_0
-  - markupsafe=2.1.1=py310h7f8727e_0
+  - markdown=3.10.2=pyhcf101f3_0
   - matplotlib-base=3.7.1=py310h1128e8f_1
   - matplotlib-inline=0.1.6=pyhd8ed1ab_0
+  - mergedeep=1.3.4=pyhd8ed1ab_1
+  - mkdocs=1.6.1=pyhd8ed1ab_1
+  - mkdocs-get-deps=0.2.0=pyhd8ed1ab_1
+  - mkdocs-material=9.7.1=pyhcf101f3_0
+  - mkdocs-material-extensions=1.3.1=pyhd8ed1ab_1
   - mkl=2023.1.0=h6d00ec8_46342
   - mkl-service=2.4.0=py310h5eee18b_1
   - mkl_fft=1.3.6=py310h1128e8f_1
   - mkl_random=1.2.2=py310h1128e8f_1
+  - more-itertools=10.8.0=pyhcf101f3_1
   - mscorefonts=0.0.1=3
   - munkres=1.1.4=py_0
   - ncurses=6.4=h6a678d5_0
@@ -102,8 +114,9 @@ dependencies:
   - openh264=2.1.1=h4ff587b_0
   - openssl=1.1.1w=h7f8727e_0
   - packaging=23.0=py310h06a4308_0
-  - pandas=1.5.3=py310h1128e8f_0
+  - paginate=0.5.7=pyhd8ed1ab_1
   - parso=0.8.3=pyhd8ed1ab_0
+  - pathspec=1.0.4=pyhd8ed1ab_0
   - pexpect=4.9.0=pyhd8ed1ab_0
   - pickleshare=0.7.5=py_1003
   - pillow=9.4.0=py310h6a678d5_0
@@ -111,88 +124,96 @@ dependencies:
   - platformdirs=4.2.0=pyhd8ed1ab_0
   - pooch=1.4.0=pyhd3eb1b0_0
   - prompt-toolkit=3.0.42=pyha770c72_0
-  - psutil=5.9.0=py310h5eee18b_0
   - ptyprocess=0.7.0=pyhd3deb0d_0
   - pure_eval=0.2.2=pyhd8ed1ab_0
   - pycparser=2.21=pyhd3eb1b0_0
-  - pyg=2.3.0=py310_torch_1.13.0_cu117
   - pygments=2.17.2=pyhd8ed1ab_0
+  - pymdown-extensions=10.21.1=pyhd8ed1ab_0
   - pyopenssl=23.0.0=py310h06a4308_0
-  - pyparsing=3.0.9=py310h06a4308_0
   - pysocks=1.7.1=py310h06a4308_0
   - python=3.10.11=h7a1cb2a_2
-  - python-dateutil=2.8.2=pyhd3eb1b0_0
   - python_abi=3.10=2_cp310
-  - pytorch=1.13.1=py3.10_cuda11.7_cudnn8.5.0_0
-  - pytorch-cluster=1.6.1=py310_torch_1.13.0_cu117
   - pytorch-cuda=11.7=h778d358_5
   - pytorch-mutex=1.0=cuda
-  - pytorch-scatter=2.1.1=py310_torch_1.13.0_cu117
-  - pytorch-sparse=0.6.17=py310_torch_1.13.0_cu117
-  - pytz=2022.7=py310h06a4308_0
   - pyyaml=6.0=py310h5764c6d_4
+  - pyyaml-env-tag=1.1=pyhd8ed1ab_0
   - pyzmq=25.1.2=py310h6a678d5_0
   - readline=8.2=h5eee18b_0
-  - requests=2.29.0=py310h06a4308_0
   - scikit-learn=1.2.2=py310h6a678d5_0
-  - scipy=1.10.1=py310h5f9d8c6_1
   - seaborn=0.12.2=py310h06a4308_0
   - setuptools=66.0.0=py310h06a4308_0
-  - six=1.16.0=pyhd3eb1b0_1
   - sqlite=3.41.2=h5eee18b_0
   - stack_data=0.6.2=pyhd8ed1ab_0
   - tbb=2021.8.0=hdb19cb5_0
   - threadpoolctl=2.2.0=pyh0d69192_0
   - tk=8.6.12=h1ccaba5_0
+  - toolz=1.1.0=pyhd8ed1ab_1
   - torchaudio=0.13.1=py310_cu117
   - torchvision=0.14.1=py310_cu117
   - tornado=6.1=py310h5764c6d_3
-  - tqdm=4.65.0=py310h2f386ee_0
   - traitlets=5.14.1=pyhd8ed1ab_0
-  - typing_extensions=4.10.0=pyha770c72_0
-  - tzdata=2023c=h04d1e81_0
+  - typeguard=4.4.2=pyhd8ed1ab_0
   - unicodedata2=14.0.0=py310h5764c6d_1
-  - urllib3=1.26.15=py310h06a4308_0
+  - watchdog=6.0.0=py310hff52083_2
   - wcwidth=0.2.13=pyhd8ed1ab_0
   - wheel=0.38.4=py310h06a4308_0
+  - xmltodict=1.0.3=pyhcf101f3_0
   - xyzservices=2022.9.0=py310h06a4308_1
   - xz=5.4.2=h5eee18b_0
   - yaml=0.2.5=h7b6447c_0
   - zeromq=4.3.5=h6a678d5_0
+  - zipp=3.23.0=pyhcf101f3_1
   - zlib=1.2.13=h5eee18b_0
   - zstd=1.5.5=hc292b87_0
   - pip:
+      - aiohappyeyeballs==2.6.1
+      - aiohttp==3.13.3
       - aioitertools==0.11.0
+      - aiosignal==1.4.0
+      - alignn==2025.4.1
       - annotated-types==0.6.0
       - anyio==4.3.0
       - ase==3.22.1
-      - attrs==23.2.0
+      - async-timeout==5.0.1
+      - attrs==25.4.0
       - backoff==1.11.1
       - bcrypt==4.1.2
       - beautifulsoup4==4.12.3
       - blinker==1.7.0
       - boto3==1.34.51
       - botocore==1.34.51
+      - charset-normalizer==3.4.4
       - click==8.1.7
+      - cuda-bindings==12.9.4
+      - cuda-pathfinder==1.3.4
+      - dgl==1.1.1
       - dnspython==2.6.1
+      - docker-pycreds==0.4.0
       - e3fp==1.2.5
       - e3nn==0.5.1
       - emmet-core==0.69.5
       - fastapi==0.110.0
       - filelock==3.13.1
+      - flake8==7.3.0
       - flask==3.0.2
+      - frozenlist==1.8.0
+      - fsspec==2026.2.0
       - future==1.0.0
       - gdown==4.7.1
       - gitdb==4.0.11
       - gitpython==3.1.42
       - h11==0.14.0
+      - idna==3.11
       - itsdangerous==2.1.2
+      - jinja2==3.1.6
       - jmespath==1.0.1
       - jsonschema==3.2.0
       - jsonschema-specifications==2023.12.1
       - latexcodec==2.0.1
-      - libsigopt==1.0.0
+      - lmdb==1.7.5
       - maggma==0.63.3
+      - markupsafe==3.0.3
+      - mccabe==0.7.0
       - mmh3==4.1.0
       - mongogrant==0.3.3
       - mongomock==4.1.2
@@ -200,49 +221,93 @@ dependencies:
       - mp-api==0.38.0
       - mpmath==1.3.0
       - msgpack==1.0.7
+      - multidict==6.7.1
       - networkx==3.2.1
-      - numpy==1.22.4
+      - numpy==1.26.4
+      - nvidia-cublas-cu12==12.1.3.1
+      - nvidia-cuda-cupti-cu12==12.1.105
+      - nvidia-cuda-nvrtc-cu12==12.1.105
+      - nvidia-cuda-runtime-cu12==12.1.105
+      - nvidia-cudnn-cu12==8.9.2.26
+      - nvidia-cufft-cu12==11.0.2.54
+      - nvidia-cufile-cu12==1.13.1.3
+      - nvidia-curand-cu12==10.3.2.106
+      - nvidia-cusolver-cu12==11.4.5.107
+      - nvidia-cusparse-cu12==12.1.0.106
+      - nvidia-cusparselt-cu12==0.7.1
+      - nvidia-nccl-cu12==2.19.3
+      - nvidia-nvjitlink-cu12==12.8.93
+      - nvidia-nvshmem-cu12==3.4.5
+      - nvidia-nvtx-cu12==12.1.105
       - opt-einsum==3.3.0
       - opt-einsum-fx==0.1.4
       - orjson==3.9.15
       - palettable==3.3.3
+      - pandas==2.1.4
       - paramiko==3.4.0
       - plotly==5.19.0
+      - propcache==0.4.1
+      - protobuf==4.25.8
+      - psutil==7.2.2
       - pybtex==0.24.0
+      - pycodestyle==2.14.0
       - pydantic==2.6.3
       - pydantic-core==2.16.3
       - pydantic-settings==2.2.1
       - pydash==7.0.7
+      - pydocstyle==6.3.0
+      - pyflakes==3.4.0
+      - pyg-lib==0.4.0+pt22cu121
       - pymatgen==2023.5.10
       - pymongo==4.6.2
       - pynacl==1.5.0
+      - pyparsing==2.4.7
       - pypng==0.20220715.0
       - pyrsistent==0.20.0
+      - python-dateutil==2.9.0.post0
       - python-dotenv==1.0.1
+      - pytz==2025.2
       - qmcpy==1.2
       - rdkit==2023.3.1
       - referencing==0.33.0
+      - requests==2.32.5
       - rpds-py==0.18.0
       - ruamel-yaml==0.17.40
       - ruamel-yaml-clib==0.2.8
       - s3transfer==0.10.0
+      - scipy==1.11.4
       - sdaxen-python-utilities==0.1.5
       - sentinels==1.0.0
-      - sigopt==8.8.2
-      - sigoptlite==0.1.2
+      - sentry-sdk==2.53.0
+      - setproctitle==1.3.7
+      - six==1.17.0
       - smart-open==7.0.1
       - smmap==5.0.1
       - sniffio==1.3.1
+      - snowballstemmer==3.0.1
       - soupsieve==2.5
       - spglib==2.3.1
       - sshtunnel==0.4.0
       - starlette==0.36.3
-      - sympy==1.12
+      - sympy==1.14.0
       - tabulate==0.9.0
       - tenacity==8.2.3
+      - torch==2.2.1
+      - torch-cluster==1.6.3+pt22cu121
+      - torch-geometric==2.7.0
+      - torch-scatter==2.1.2+pt22cu121
+      - torch-sparse==0.6.18+pt22cu121
+      - torchdata==0.8.0
+      - tqdm==4.67.3
+      - triton==2.2.0
+      - typing-extensions==4.15.0
+      - tzdata==2025.3
       - uncertainties==3.1.7
+      - urllib3==1.26.20
       - uvicorn==0.27.1
+      - wandb==0.25.0
       - werkzeug==3.0.1
       - wrapt==1.16.0
-      - wandb==0.16.3
-prefix: /home/jypeng/miniconda3/envs/Perovskite_ML_Environment
+      - xxhash==3.6.0
+      - yarl==1.22.0
+prefix: /data2/users/jypeng/.conda/envs/Perovskite_ML_Environment

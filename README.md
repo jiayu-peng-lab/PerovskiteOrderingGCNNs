@@ -82,15 +82,7 @@ Afterwards, you can run the following three notebooks to reproduce the main resu
 
 ### DGL (for ALIGNN only)
 
-ALIGNN requires [DGL](https://www.dgl.ai/). We keep `dgl/` untracked in Git; install DGL locally in your environment:
-
-- If you installed PyTorch 1.13.1 with CUDA 11.7 (as specified above):
-
-```bash
-conda install -c dglteam/label/cu117 dgl
-```
-
-Verify the install:
+ALIGNN requires [DGL](https://www.dgl.ai/). Verify the install:
 
 ```bash
 python -c "import dgl, torch; print('DGL', dgl.__version__, 'Torch', torch.__version__)"
