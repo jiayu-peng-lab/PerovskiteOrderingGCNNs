@@ -40,7 +40,9 @@ This script will:
 - Set up the Conda environment (using the provided [environment.yml](environment.yml) if available).
 - Ensure you are ready to run the notebooks or scripts.
 
-Alternatively, you can download all our data and trained models manually; they are archived on Zenodo ([DOI: 10.5281/zenodo.13820311](https://doi.org/10.5281/zenodo.13820311)) and Materials Data Facility ([DOI: 10.18126/ncqt-rh18](https://doi.org/10.18126/ncqt-rh18)). Please place all data and model files in the corresponding directories and then refer to the following Jupyter notebooks below to reproduce the results of our paper. Moreover, if you want to install the Conda environment manually, this repository requires the following packages to run correctly:
+Alternatively, you can download all our data and trained models manually; they are archived on Zenodo ([DOI: 10.5281/zenodo.13820311](https://doi.org/10.5281/zenodo.13820311)) and Materials Data Facility ([DOI: 10.18126/ncqt-rh18](https://doi.org/10.18126/ncqt-rh18)). Please place all data and model files in the corresponding directories, and then refer to the following Jupyter notebooks below to reproduce the results of our paper.
+
+Moreover, if you the Conda environment is not installed successfully or you want to do it manually, this repository requires the following packages to run correctly:
 ```
 pandas            1.5.3
 scipy             1.10.1
@@ -73,6 +75,11 @@ conda env create -f environment.yml
 conda activate Perovskite_ML_Environment
 ```
 
+Afterwards, you can run the following three notebooks to reproduce the main results of this paper:
+- [`1_model_training.ipynb`](1_model_training.ipynb): Train GCNNs and conduct hyperparameter optimization.
+- [`2_model_inference.ipynb`](2_model_inference.ipynb): Verify performance, select top models, compute predictions, and extract latent embeddings.
+- [`3_model_analysis.ipynb`](3_model_analysis.ipynb): Reproduce all major figures in the manuscript.
+
 ### DGL (for ALIGNN only)
 
 ALIGNN requires [DGL](https://www.dgl.ai/). We keep `dgl/` untracked in Git; install DGL locally in your environment:
@@ -80,10 +87,6 @@ ALIGNN requires [DGL](https://www.dgl.ai/). We keep `dgl/` untracked in Git; ins
 - If you installed PyTorch 1.13.1 with CUDA 11.7 (as specified above):
 
 ```bash
-# Option A: pip (recommended)
-pip install dgl-cu117 -f https://data.dgl.ai/wheels/torch-1.13/cu117/repo.html
-
-# Option B: conda
 conda install -c dglteam/label/cu117 dgl
 ```
 
@@ -94,11 +97,6 @@ python -c "import dgl, torch; print('DGL', dgl.__version__, 'Torch', torch.__ver
 ```
 
 If your CUDA/Torch versions differ, pick the matching wheel from the DGL wheel index (`https://www.dgl.ai/pages/start.html`).
-
-Afterwards, you can run the following three notebooks to reproduce the main results of this paper:
-- [`1_model_training.ipynb`](1_model_training.ipynb): Train GCNNs and conduct hyperparameter optimization.
-- [`2_model_inference.ipynb`](2_model_inference.ipynb): Verify performance, select top models, compute predictions, and extract latent embeddings.
-- [`3_model_analysis.ipynb`](3_model_analysis.ipynb): Reproduce all major figures in the manuscript.
 
 ---
 
